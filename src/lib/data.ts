@@ -92,6 +92,29 @@ export async function getResident(id: string): Promise<Resident | undefined> {
   return s.residents.find((r) => r.id === id)
 }
 
+export type ResidentListEntry = {
+  resident: Resident
+  lastNoteAt: string | null
+}
+
+// Residents paired with their most recent visit note, sorted by that note's
+// date descending. Residents with no notes yet sort last.
+export async function getResidentListEntries(): Promise<ResidentListEntry[]> {
+  const s = await loadStore()
+  const entries: ResidentListEntry[] = s.residents.map((resident) => {
+    const notes = s.visitNotes
+      .filter((n) => n.resident_id === resident.id)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    return { resident, lastNoteAt: notes[0]?.created_at ?? null }
+  })
+  return entries.sort((a, b) => {
+    if (a.lastNoteAt === null && b.lastNoteAt === null) return 0
+    if (a.lastNoteAt === null) return 1
+    if (b.lastNoteAt === null) return -1
+    return b.lastNoteAt.localeCompare(a.lastNoteAt)
+  })
+}
+
 export async function getMedications(residentId: string): Promise<Medication[]> {
   const s = await loadStore()
   return s.medications.filter((m) => m.resident_id === residentId)
