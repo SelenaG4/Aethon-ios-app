@@ -1,6 +1,7 @@
 import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
-import { COLORS, SPACE, TYPE, WEIGHT } from '../constants/theme'
+import { StyleSheet, View } from 'react-native'
+import { COLORS, SPACE, TYPE } from '../constants/theme'
+import AppText from './AppText'
 
 type Props = {
   title: string
@@ -10,8 +11,14 @@ type Props = {
 export default function ScreenHeader({ title, subtitle }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <AppText weight="black" style={styles.title}>
+        {title}
+      </AppText>
+      {subtitle ? (
+        <AppText weight="regular" style={styles.subtitle}>
+          {subtitle}
+        </AppText>
+      ) : null}
     </View>
   )
 }
@@ -22,7 +29,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: TYPE.h1,
-    fontWeight: WEIGHT.black,
     color: COLORS.text,
     letterSpacing: -0.5,
   },

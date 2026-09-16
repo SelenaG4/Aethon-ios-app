@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE, WEIGHT } from '../constants/theme'
 import { getViewChoice, setViewChoice, ViewChoice } from '../lib/data'
-import { StyleGuideScreen } from '../screens/shared'
+import { FamilyPortalScreen, StyleGuideScreen } from '../screens/shared'
 import CarerNavigator from './CarerNavigator'
 import ResidentNavigator from './ResidentNavigator'
 
@@ -13,6 +13,7 @@ export default function RootNavigator() {
   const [view, setView] = useState<ViewChoice | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isStyleGuideOpen, setIsStyleGuideOpen] = useState(false)
+  const [isFamilyPortalOpen, setIsFamilyPortalOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -57,10 +58,15 @@ export default function RootNavigator() {
     return <StyleGuideScreen onBack={() => setIsStyleGuideOpen(false)} />
   }
 
+  if (isFamilyPortalOpen) {
+    return <FamilyPortalScreen onBack={() => setIsFamilyPortalOpen(false)} />
+  }
+
   return (
     <ChooserScreen
       onChoose={chooseView}
       onOpenStyleGuide={() => setIsStyleGuideOpen(true)}
+      onOpenFamilyPortal={() => setIsFamilyPortalOpen(true)}
     />
   )
 }
@@ -68,9 +74,11 @@ export default function RootNavigator() {
 function ChooserScreen({
   onChoose,
   onOpenStyleGuide,
+  onOpenFamilyPortal,
 }: {
   onChoose: (choice: ViewChoice) => void
   onOpenStyleGuide: () => void
+  onOpenFamilyPortal: () => void
 }) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -91,6 +99,14 @@ function ChooserScreen({
           accessibilityLabel="Resident"
         >
           <Text style={styles.choiceButtonText}>Resident</Text>
+        </Pressable>
+        <Pressable
+          style={styles.familyPortalLink}
+          onPress={onOpenFamilyPortal}
+          accessibilityRole="button"
+          accessibilityLabel="Family or management"
+        >
+          <Text style={styles.familyPortalLinkText}>Family or management</Text>
         </Pressable>
         <Pressable
           style={styles.styleGuideButton}
@@ -147,9 +163,21 @@ const styles = StyleSheet.create({
     fontSize: TYPE.h2,
     fontWeight: '700',
   },
-  styleGuideButton: {
+  familyPortalLink: {
     alignSelf: 'center',
     marginTop: SPACE.lg,
+    minHeight: TOUCH.standard,
+    paddingHorizontal: SPACE.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  familyPortalLinkText: {
+    color: COLORS.textSecond,
+    fontSize: TYPE.body,
+    fontWeight: WEIGHT.semibold,
+  },
+  styleGuideButton: {
+    alignSelf: 'center',
     minHeight: TOUCH.standard,
     paddingHorizontal: SPACE.lg,
     alignItems: 'center',

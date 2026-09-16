@@ -1,19 +1,23 @@
 import React from 'react'
-import { StyleSheet, Text } from 'react-native'
-import { COLORS, WEIGHT } from '../constants/theme'
+import { StyleSheet } from 'react-native'
+import { COLORS } from '../constants/theme'
+import AppText from './AppText'
 
 type Props = {
   children: React.ReactNode
 }
 
 export default function SectionTitle({ children }: Props) {
-  return <Text style={styles.title}>{children}</Text>
+  return (
+    <AppText weight="heavy" style={styles.title}>
+      {children}
+    </AppText>
+  )
 }
 
 const styles = StyleSheet.create({
   title: {
     fontSize: 18,
-    fontWeight: WEIGHT.heavy,
     color: COLORS.text,
   },
 })

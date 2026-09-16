@@ -1,7 +1,8 @@
 import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import type { LucideIcon } from 'lucide-react-native'
-import { COLORS, RADIUS, SPACE, TYPE, WEIGHT } from '../constants/theme'
+import { COLORS, RADIUS, SPACE, TYPE } from '../constants/theme'
+import AppText from './AppText'
 
 export type StatusPillVariant = 'success' | 'info' | 'warning' | 'danger'
 
@@ -24,7 +25,9 @@ export default function StatusPill({ variant, label, icon: Icon }: Props) {
   return (
     <View style={[styles.pill, { backgroundColor: background }]}>
       <Icon size={14} color={color} />
-      <Text style={[styles.label, { color }]}>{label}</Text>
+      <AppText weight="bold" style={[styles.label, { color }]}>
+        {label}
+      </AppText>
     </View>
   )
 }
@@ -41,6 +44,5 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: TYPE.small,
-    fontWeight: WEIGHT.bold,
   },
 })

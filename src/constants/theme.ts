@@ -21,10 +21,19 @@ export const COLORS = {
   textSecond: '#475569',
   textMuted: '#64748b',
   border: '#e2e8f0',
+  accent: '#4f46e5',
+  cyan: '#06b6d4',
+  purple: '#a855f7',
+  badge: '#f43f5e',
 }
 
 export const GRADIENT = {
-  avatar: ['#0ea5e9', '#4f46e5'],
+  avatar: ['#6366f1', '#a855f7'],
+  active: ['#06b6d4', '#6366f1'],
+  statBlue: ['#3b82f6', '#22d3ee'],
+  statGreen: ['#34d399', '#14b8a6'],
+  statRed: ['#f43f5e', '#fb923c'],
+  statPurple: ['#6366f1', '#a855f7'],
 }
 
 export const TYPE = {
@@ -34,6 +43,15 @@ export const TYPE = {
 
 export const WEIGHT = {
   regular: '400', semibold: '600', bold: '700', heavy: '800', black: '900',
+} as const
+
+export const FONT = {
+  regular: 'Geist-Regular',
+  medium: 'Geist-Medium',
+  semibold: 'Geist-SemiBold',
+  bold: 'Geist-Bold',
+  heavy: 'Geist-ExtraBold',
+  black: 'Geist-Black',
 } as const
 
 export const TOUCH = { standard: 52, resident: 80 }

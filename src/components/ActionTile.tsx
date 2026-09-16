@@ -1,7 +1,8 @@
 import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import type { LucideIcon } from 'lucide-react-native'
-import { COLORS, RADIUS, SPACE, TYPE, WEIGHT } from '../constants/theme'
+import { COLORS, RADIUS, SPACE, TYPE } from '../constants/theme'
+import AppText from './AppText'
 import Card from './Card'
 
 export type ActionTileVariant = 'success' | 'info' | 'warning' | 'danger'
@@ -30,7 +31,9 @@ export default function ActionTile({ variant, label, icon: Icon, onPress }: Prop
       <View style={[styles.iconCircle, { backgroundColor: background }]}>
         <Icon size={22} color={color} />
       </View>
-      <Text style={styles.label}>{label}</Text>
+      <AppText weight="bold" style={styles.label}>
+        {label}
+      </AppText>
     </Card>
   )
 }
@@ -51,7 +54,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: TYPE.small,
-    fontWeight: WEIGHT.bold,
     color: COLORS.text,
     textAlign: 'center',
   },

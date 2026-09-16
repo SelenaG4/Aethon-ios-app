@@ -26,7 +26,7 @@ export default function Card({ children, onPress, style }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: 20,

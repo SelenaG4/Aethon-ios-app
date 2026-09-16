@@ -1,7 +1,8 @@
 import React from 'react'
-import { StyleSheet, Text } from 'react-native'
+import { StyleSheet } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
-import { COLORS, GRADIENT, RADIUS, WEIGHT } from '../constants/theme'
+import { COLORS, GRADIENT, RADIUS } from '../constants/theme'
+import AppText from './AppText'
 
 type Props = {
   name: string
@@ -21,7 +22,9 @@ export default function GradientAvatar({ name, size = 56 }: Props) {
         { width: size, height: size, borderRadius: RADIUS.lg },
       ]}
     >
-      <Text style={[styles.initial, { fontSize: size * 0.42 }]}>{initial}</Text>
+      <AppText weight="black" style={[styles.initial, { fontSize: size * 0.42 }]}>
+        {initial}
+      </AppText>
     </LinearGradient>
   )
 }
@@ -33,6 +36,5 @@ const styles = StyleSheet.create({
   },
   initial: {
     color: COLORS.surface,
-    fontWeight: WEIGHT.black,
   },
 })
