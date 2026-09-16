@@ -13,6 +13,15 @@ import {
 // When a backend is added, only the internals of this file should change.
 
 const STORAGE_KEY = '@aethon/mock_data_v1'
+const VIEW_CHOICE_KEY = '@aethon/view_choice_v1'
+
+export type ViewChoice = 'carer' | 'resident'
+
+// There is no sign-in yet, so every carer-facing screen runs as this fixed sample user.
+export const CURRENT_CARER = {
+  id: 'carer-test',
+  name: 'Test Carer',
+}
 
 type Store = {
   residents: Resident[]
@@ -94,4 +103,17 @@ export async function addVisitNote(
 export async function resetMockData(): Promise<void> {
   store = cloneInitialData()
   await AsyncStorage.removeItem(STORAGE_KEY)
+}
+
+export async function getViewChoice(): Promise<ViewChoice | null> {
+  const value = await AsyncStorage.getItem(VIEW_CHOICE_KEY)
+  return value === 'carer' || value === 'resident' ? value : null
+}
+
+export async function setViewChoice(choice: ViewChoice | null): Promise<void> {
+  if (choice) {
+    await AsyncStorage.setItem(VIEW_CHOICE_KEY, choice)
+  } else {
+    await AsyncStorage.removeItem(VIEW_CHOICE_KEY)
+  }
 }

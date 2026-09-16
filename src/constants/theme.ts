@@ -1,32 +1,52 @@
 export const COLORS = {
-  primary: '#1D9E75',
-  primaryDark: '#085041',
-  primaryLight: '#E1F5EE',
-  blue: '#185FA5',
-  blueLight: '#E6F1FB',
-  amber: '#BA7517',
-  amberLight: '#FAEEDA',
-  danger: '#A32D2D',
-  dangerLight: '#FCEBEB',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F5F5F5',
-  text: '#1A1A1A',
-  textSecond: '#444444',
-  textMuted: '#888888',
-  border: '#CCCCCC',
+  primary: '#0284c7',
+  primaryDark: '#0369a1',
+  primaryLight: '#e0f2fe',
+  navy: '#0f172a',
+  navyLight: '#1e293b',
+  blue: '#0284c7',
+  blueLight: '#e0f2fe',
+  indigo: '#4f46e5',
+  amber: '#d97706',
+  amberLight: '#fef3c7',
+  danger: '#e11d48',
+  dangerLight: '#ffe4e6',
+  success: '#10b981',
+  successDark: '#047857',
+  successLight: '#d1fae5',
+  surface: '#ffffff',
+  surfaceAlt: '#f8fafc',
+  background: '#f1f5f9',
+  text: '#0f172a',
+  textSecond: '#475569',
+  textMuted: '#64748b',
+  border: '#e2e8f0',
+}
+
+export const GRADIENT = {
+  avatar: ['#0ea5e9', '#4f46e5'],
 }
 
 export const TYPE = {
-  // Standard scale, used on carer and family screens
   h1: 28, h2: 22, h3: 18, body: 17, small: 15, caption: 13,
-  // Resident scale. No resident-facing text may fall below residentMin.
   residentH1: 36, residentH2: 26, residentBody: 22, residentMin: 22,
 }
 
-export const TOUCH = {
-  standard: 52, // minimum tap target on carer and family screens
-  resident: 80, // minimum tap target on any resident-facing screen
-}
+export const WEIGHT = {
+  regular: '400', semibold: '600', bold: '700', heavy: '800', black: '900',
+} as const
 
-export const RADIUS = { sm: 6, md: 10, lg: 14, pill: 999 }
+export const TOUCH = { standard: 52, resident: 80 }
+
+export const RADIUS = { sm: 8, md: 12, lg: 16, xl: 24, pill: 999 }
 export const SPACE = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 }
+
+export const SHADOW = {
+  card: {
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+}
