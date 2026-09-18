@@ -6,25 +6,26 @@ import { ArrowLeft, X } from 'lucide-react-native'
 import { AppText } from '../../components'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import { recordCareStageChange } from '../../lib/data'
+import { TranslationKey, useTranslation } from '../../lib/i18n'
 import type { CareStage } from '../../lib/mockData'
 import type { CarerStackParamList } from '../../navigation/CarerNavigator'
 
 type CareStageModalRoute = RouteProp<CarerStackParamList, 'CareStageModal'>
 
-const STAGE_OPTIONS: { value: CareStage; label: string }[] = [
-  { value: 'independent', label: 'Living independently' },
-  { value: 'family_supported', label: 'Supported by family' },
-  { value: 'professionally_supported', label: 'Professional care at home' },
-  { value: 'residential', label: 'In a care facility' },
+const STAGE_OPTIONS: { value: CareStage; labelKey: TranslationKey }[] = [
+  { value: 'independent', labelKey: 'careStage.stage.independent' },
+  { value: 'family_supported', labelKey: 'careStage.stage.family_supported' },
+  { value: 'professionally_supported', labelKey: 'careStage.stage.professionally_supported' },
+  { value: 'residential', labelKey: 'careStage.stage.residential' },
 ]
 
 type Timing = 'this_month' | 'last_month' | 'two_to_three_months' | 'longer_ago'
 
-const TIMING_OPTIONS: { value: Timing; label: string }[] = [
-  { value: 'this_month', label: 'This month' },
-  { value: 'last_month', label: 'Last month' },
-  { value: 'two_to_three_months', label: 'Two to three months ago' },
-  { value: 'longer_ago', label: 'Longer ago' },
+const TIMING_OPTIONS: { value: Timing; labelKey: TranslationKey }[] = [
+  { value: 'this_month', labelKey: 'careStage.timing.thisMonth' },
+  { value: 'last_month', labelKey: 'careStage.timing.lastMonth' },
+  { value: 'two_to_three_months', labelKey: 'careStage.timing.twoToThreeMonths' },
+  { value: 'longer_ago', labelKey: 'careStage.timing.longerAgo' },
 ]
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -49,6 +50,7 @@ type Step = 'stage' | 'timing' | 'note'
 export default function CareStageModal() {
   const navigation = useNavigation<NavigationProp<CarerStackParamList>>()
   const route = useRoute<CareStageModalRoute>()
+  const { t } = useTranslation()
   const { clientId } = route.params
 
   const [step, setStep] = useState<Step>('stage')
@@ -91,10 +93,10 @@ export default function CareStageModal() {
 
   const question =
     step === 'stage'
-      ? 'What is the situation now?'
+      ? t('careStage.questionStage')
       : step === 'timing'
-        ? 'Roughly when did this change?'
-        : 'What changed?'
+        ? t('careStage.questionTiming')
+        : t('careStage.questionNote')
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -103,7 +105,7 @@ export default function CareStageModal() {
           onPress={onBack}
           style={styles.closeButton}
           accessibilityRole="button"
-          accessibilityLabel={step === 'stage' ? 'Cancel' : 'Back'}
+          accessibilityLabel={step === 'stage' ? t('common.cancel') : t('common.back')}
         >
           {step === 'stage' ? (
             <X size={22} color={COLORS.text} />
@@ -126,10 +128,10 @@ export default function CareStageModal() {
                 onPress={() => onChooseStage(option.value)}
                 style={styles.stageButton}
                 accessibilityRole="button"
-                accessibilityLabel={option.label}
+                accessibilityLabel={t(option.labelKey)}
               >
                 <AppText weight="bold" style={styles.stageButtonText}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </AppText>
               </Pressable>
             ))}
@@ -144,10 +146,10 @@ export default function CareStageModal() {
                 onPress={() => onChooseTiming(option.value)}
                 style={styles.timingButton}
                 accessibilityRole="button"
-                accessibilityLabel={option.label}
+                accessibilityLabel={t(option.labelKey)}
               >
                 <AppText weight="bold" style={styles.timingButtonText}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </AppText>
               </Pressable>
             ))}
@@ -160,7 +162,7 @@ export default function CareStageModal() {
               style={styles.noteInput}
               value={note}
               onChangeText={setNote}
-              placeholder="Optional"
+              placeholder={t('careStage.notePlaceholder')}
               placeholderTextColor={COLORS.textMuted}
               multiline
               textAlignVertical="top"
@@ -170,10 +172,10 @@ export default function CareStageModal() {
               onPress={onSave}
               disabled={isSaving}
               accessibilityRole="button"
-              accessibilityLabel="Save"
+              accessibilityLabel={t('common.save')}
             >
               <AppText weight="bold" style={styles.saveButtonText}>
-                {isSaving ? 'Saving…' : 'Save'}
+                {isSaving ? t('common.saving') : t('common.save')}
               </AppText>
             </Pressable>
           </View>

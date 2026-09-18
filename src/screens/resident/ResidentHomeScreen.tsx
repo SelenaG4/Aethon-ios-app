@@ -14,7 +14,7 @@ import {
   Phone,
   Smile,
 } from 'lucide-react-native'
-import { AppText, EmptyView, ErrorView, LoadingView } from '../../components'
+import { AppText, EmptyView, ErrorView, LanguageButtons, LoadingView } from '../../components'
 import { COLORS, RADIUS, SHADOW, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import {
   acknowledgeMessage,
@@ -26,6 +26,7 @@ import {
   getUnacknowledgedMessages,
   subscribe,
 } from '../../lib/data'
+import { formatFullDate, TranslationKey, useTranslation } from '../../lib/i18n'
 import type { Medication, MedicationAcknowledgement, Message, Resident } from '../../lib/mockData'
 import type { ResidentStackParamList } from '../../navigation/ResidentNavigator'
 import AssistanceModal from './AssistanceModal'
@@ -35,12 +36,6 @@ type Props = {
   onSwitchView: () => void
 }
 
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
 const MOOD_OPTIONS = [
   { value: 1, Icon: Angry },
   { value: 2, Icon: Frown },
@@ -49,18 +44,15 @@ const MOOD_OPTIONS = [
   { value: 5, Icon: Laugh },
 ]
 
-function greetingForHour(hour: number): string {
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
-
-function formatFullDate(date: Date): string {
-  return `${WEEKDAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+function greetingKey(hour: number): TranslationKey {
+  if (hour < 12) return 'common.goodMorning'
+  if (hour < 18) return 'common.goodAfternoon'
+  return 'common.goodEvening'
 }
 
 export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) {
   const navigation = useNavigation<NavigationProp<ResidentStackParamList>>()
+  const { t, language } = useTranslation()
   const insets = useSafeAreaInsets()
   const [resident, setResident] = useState<Resident | null>(null)
   const [medications, setMedications] = useState<Medication[]>([])
@@ -126,7 +118,7 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
   if (loadError) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <ErrorView message="Could not load your home screen" onRetry={load} isResident />
+        <ErrorView message={t('residentHome.loadError')} onRetry={load} isResident />
       </SafeAreaView>
     )
   }
@@ -145,21 +137,21 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
         <AppText weight="black" style={styles.greeting}>
-          {greetingForHour(new Date().getHours())}, {resident.first_name}
+          {t(greetingKey(new Date().getHours()))}, {resident.first_name}
         </AppText>
-        <AppText style={styles.fullDate}>{formatFullDate(new Date())}</AppText>
+        <AppText style={styles.fullDate}>{formatFullDate(new Date(), language)}</AppText>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <AccentCard accentColor={COLORS.primary}>
           <View style={styles.cardHeadingRow}>
             <AppText weight="bold" style={styles.medicationHeading}>
-              Your medications today
+              {t('residentHome.medicationsToday')}
             </AppText>
             {streak >= 3 ? (
               <View style={styles.streakPill}>
                 <AppText weight="semibold" style={styles.streakPillText}>
-                  {streak} days in a row
+                  {t('residentHome.daysInARow', { count: streak })}
                 </AppText>
               </View>
             ) : null}
@@ -167,7 +159,7 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
 
           {allAcknowledgedToday ? (
             <AppText weight="semibold" style={styles.allDoneText}>
-              All done today
+              {t('residentHome.allDoneToday')}
             </AppText>
           ) : (
             medications.map((medication) => {
@@ -179,7 +171,7 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
                   style={styles.medicationRow}
                   onPress={() => navigation.navigate('Acknowledge', { medicationId: medication.id })}
                   accessibilityRole="button"
-                  accessibilityLabel={`${medication.name}, ${medication.dosage}${taken ? ', taken today' : ''}`}
+                  accessibilityLabel={`${medication.name}, ${medication.dosage}${taken ? t('residentHome.takenToday') : ''}`}
                 >
                   <View style={styles.medicationInfo}>
                     <AppText weight="bold" style={styles.medicationName}>
@@ -197,17 +189,15 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
             })
           )}
 
-          <AppText style={styles.medicationFootnote}>
-            Reference only. Not a medication administration record.
-          </AppText>
+          <AppText style={styles.medicationFootnote}>{t('residentHome.medicationFootnote')}</AppText>
         </AccentCard>
 
         <AccentCard accentColor={COLORS.blue}>
           <AppText weight="bold" style={styles.cardHeading}>
-            Messages from your family
+            {t('residentHome.messagesFromFamily')}
           </AppText>
           {messages.length === 0 ? (
-            <EmptyView icon={Mail} message="No new messages" isResident />
+            <EmptyView icon={Mail} message={t('residentHome.noNewMessages')} isResident />
           ) : (
             messages.map((message) => {
               const isAcking = ackingMessageIds.has(message.id)
@@ -227,7 +217,7 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
                     disabled={isAcking}
                     style={[styles.messageAckControl, isAcking && styles.messageAckControlDone]}
                     accessibilityRole="button"
-                    accessibilityLabel={`Mark message from ${message.sender_name} as seen`}
+                    accessibilityLabel={t('residentHome.markMessageSeen', { name: message.sender_name })}
                     accessibilityState={{ disabled: isAcking }}
                   >
                     <Heart
@@ -244,11 +234,11 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
 
         <AccentCard accentColor={COLORS.blue}>
           <AppText weight="bold" style={styles.cardHeading}>
-            How are you today?
+            {t('residentHome.howAreYouToday')}
           </AppText>
           {moodLogged ? (
             <AppText weight="semibold" style={styles.thankYouText}>
-              Thank you
+              {t('residentHome.thankYou')}
             </AppText>
           ) : (
             <View style={styles.moodRow}>
@@ -258,7 +248,7 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
                   onPress={() => onSelectMood(option.value)}
                   style={styles.moodButton}
                   accessibilityRole="button"
-                  accessibilityLabel={`Mood ${option.value} of 5`}
+                  accessibilityLabel={t('residentHome.moodOption', { value: option.value })}
                 >
                   <option.Icon size={40} color={COLORS.textMuted} />
                 </Pressable>
@@ -270,7 +260,7 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
         {resident.independence_goals.length > 0 ? (
           <AccentCard accentColor={COLORS.amber}>
             <AppText weight="bold" style={styles.cardHeading}>
-              What matters to you
+              {t('residentHome.whatMattersToYou')}
             </AppText>
             {resident.independence_goals.map((goal, index) => (
               <AppText key={index} style={styles.goalText}>
@@ -280,13 +270,20 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
           </AccentCard>
         ) : null}
 
+        <AccentCard accentColor={COLORS.border}>
+          <AppText weight="bold" style={styles.cardHeading}>
+            {t('residentHome.language')}
+          </AppText>
+          <LanguageButtons />
+        </AccentCard>
+
         <Pressable
           onPress={onSwitchView}
           style={styles.switchViewLink}
           accessibilityRole="button"
-          accessibilityLabel="Switch view"
+          accessibilityLabel={t('residentHome.switchView')}
         >
-          <AppText style={styles.switchViewLinkText}>Switch view</AppText>
+          <AppText style={styles.switchViewLinkText}>{t('residentHome.switchView')}</AppText>
         </Pressable>
       </ScrollView>
 
@@ -294,11 +291,11 @@ export default function ResidentHomeScreen({ residentId, onSwitchView }: Props) 
         style={[styles.assistanceControl, { bottom: insets.bottom + 16 }]}
         onPress={() => setIsAssistanceModalOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel="I need help"
+        accessibilityLabel={t('residentHome.iNeedHelp')}
       >
         <Phone size={30} color={COLORS.surface} />
         <AppText weight="bold" style={styles.assistanceControlText}>
-          I need help
+          {t('residentHome.iNeedHelp')}
         </AppText>
       </Pressable>
 
@@ -338,11 +335,15 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: TYPE.residentH1,
+    lineHeight: 50,
     color: COLORS.surface,
   },
   fullDate: {
     marginTop: SPACE.xs,
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
+    // White-on-primary header text, not a body grey — the "no grey lighter
+    // than #475569" rule (readability of grey text on white) doesn't apply.
     color: 'rgba(255,255,255,0.85)',
   },
   scrollContent: {
@@ -361,15 +362,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    rowGap: SPACE.xs,
     marginBottom: SPACE.md,
   },
   cardHeading: {
     fontSize: 24,
+    lineHeight: 34,
     color: COLORS.text,
     marginBottom: SPACE.md,
   },
   medicationHeading: {
+    flexShrink: 1,
     fontSize: 24,
+    lineHeight: 34,
     color: COLORS.primaryDark,
   },
   streakPill: {
@@ -380,10 +386,12 @@ const styles = StyleSheet.create({
   },
   streakPillText: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.primaryDark,
   },
   allDoneText: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.primary,
   },
   medicationRow: {
@@ -399,17 +407,20 @@ const styles = StyleSheet.create({
   },
   medicationName: {
     fontSize: 26,
+    lineHeight: 36,
     color: COLORS.text,
   },
   medicationDose: {
     marginTop: 2,
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
   },
   medicationFootnote: {
     marginTop: SPACE.md,
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
     fontStyle: 'italic',
   },
   messageRow: {
@@ -423,12 +434,13 @@ const styles = StyleSheet.create({
   },
   messageSender: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.text,
   },
   messageText: {
     marginTop: 4,
     fontSize: TYPE.residentMin,
-    lineHeight: 30,
+    lineHeight: 31,
     color: COLORS.textSecond,
   },
   messageImage: {
@@ -450,7 +462,9 @@ const styles = StyleSheet.create({
   },
   moodRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
+    rowGap: SPACE.sm,
   },
   moodButton: {
     width: TOUCH.resident,
@@ -464,10 +478,12 @@ const styles = StyleSheet.create({
   },
   thankYouText: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.primary,
   },
   goalText: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.text,
     marginTop: SPACE.xs,
   },
@@ -480,22 +496,26 @@ const styles = StyleSheet.create({
   },
   switchViewLinkText: {
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
   },
   assistanceControl: {
     position: 'absolute',
     left: 16,
     right: 16,
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     borderRadius: 14,
     backgroundColor: COLORS.danger,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACE.sm,
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.md,
   },
   assistanceControlText: {
     fontSize: 26,
+    lineHeight: 36,
     color: COLORS.surface,
   },
 })

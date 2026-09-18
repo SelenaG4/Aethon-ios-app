@@ -6,6 +6,7 @@ import { Angry, ArrowLeft, Check, Frown, Laugh, Meh, Smile, Star } from 'lucide-
 import { AppText } from '../../components'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import { addHealthLog, CURRENT_CARER } from '../../lib/data'
+import { useTranslation } from '../../lib/i18n'
 import { painBandColor } from '../../lib/observations'
 import type { CarerStackParamList } from '../../navigation/CarerNavigator'
 
@@ -25,6 +26,7 @@ const PAIN_VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 export default function ObservationScreen() {
   const navigation = useNavigation<NavigationProp<CarerStackParamList>>()
   const route = useRoute<ObservationRoute>()
+  const { t } = useTranslation()
   const { clientId, clientName, mode } = route.params
   const isResident = mode === 'resident'
 
@@ -90,7 +92,7 @@ export default function ObservationScreen() {
             <Check size={40} color={COLORS.surface} />
           </View>
           <AppText weight="bold" style={styles.savedText}>
-            Observation saved
+            {t('observation.saved')}
           </AppText>
         </View>
       </SafeAreaView>
@@ -104,7 +106,7 @@ export default function ObservationScreen() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t('common.back')}
         >
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
@@ -115,7 +117,7 @@ export default function ObservationScreen() {
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppText weight="bold" style={[styles.label, { fontSize: labelFontSize }]}>
-          {isResident ? 'How are you feeling today?' : 'Mood'}
+          {t(isResident ? 'observation.moodResident' : 'observation.moodCarer')}
         </AppText>
         <View style={styles.moodRow}>
           {MOOD_OPTIONS.map((option, index) => {
@@ -125,7 +127,7 @@ export default function ObservationScreen() {
                 key={option.value}
                 onPress={() => onSelectMood(option.value)}
                 accessibilityRole="button"
-                accessibilityLabel={`Mood ${option.value} of 5`}
+                accessibilityLabel={t('observation.moodOption', { value: option.value })}
                 accessibilityState={{ selected }}
               >
                 <Animated.View
@@ -151,7 +153,7 @@ export default function ObservationScreen() {
         </View>
 
         <AppText weight="bold" style={[styles.label, styles.sectionSpacing, { fontSize: labelFontSize }]}>
-          {isResident ? 'How did you sleep?' : 'Sleep quality'}
+          {t(isResident ? 'observation.sleepResident' : 'observation.sleepCarer')}
         </AppText>
         <View style={styles.starsRow}>
           {SLEEP_VALUES.map((value) => {
@@ -162,7 +164,7 @@ export default function ObservationScreen() {
                 onPress={() => setSleep(value)}
                 style={[styles.starTouch, { width: starTouchSize, height: starTouchSize }]}
                 accessibilityRole="button"
-                accessibilityLabel={`Sleep quality ${value} of 5`}
+                accessibilityLabel={t('observation.sleepOption', { value })}
               >
                 <Star
                   size={starIconSize}
@@ -175,7 +177,7 @@ export default function ObservationScreen() {
         </View>
 
         <AppText weight="bold" style={[styles.label, styles.sectionSpacing, { fontSize: labelFontSize }]}>
-          Any pain today?
+          {t('observation.painQuestion')}
         </AppText>
         {pain !== null ? (
           <AppText weight="black" style={[styles.painValue, { color: painBandColor(pain) }]}>
@@ -184,7 +186,7 @@ export default function ObservationScreen() {
         ) : null}
         {pain === 0 ? (
           <AppText weight="semibold" style={[styles.noPainText, { fontSize: noPainFontSize }]}>
-            No pain today
+            {t('observation.noPainToday')}
           </AppText>
         ) : null}
         <View style={styles.painRow} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
@@ -204,7 +206,7 @@ export default function ObservationScreen() {
                 disabled={segmentWidth === 0}
                 style={[styles.painSegment, segmentStyle]}
                 accessibilityRole="button"
-                accessibilityLabel={`Pain ${value} of 10`}
+                accessibilityLabel={t('observation.painOption', { value })}
                 accessibilityState={{ selected }}
               />
             )
@@ -214,13 +216,13 @@ export default function ObservationScreen() {
         {!isResident ? (
           <>
             <AppText weight="bold" style={[styles.label, styles.sectionSpacing, { fontSize: labelFontSize }]}>
-              Weight
+              {t('observation.weight')}
             </AppText>
             <View style={styles.weightRow}>
               <TextInput
                 style={styles.weightInput}
                 value={weightInput}
-                onChangeText={(t) => setWeightInput(t.replace(/[^0-9.]/g, ''))}
+                onChangeText={(value) => setWeightInput(value.replace(/[^0-9.]/g, ''))}
                 keyboardType="decimal-pad"
                 placeholder="0"
                 placeholderTextColor={COLORS.textMuted}
@@ -233,7 +235,7 @@ export default function ObservationScreen() {
         ) : null}
 
         <AppText weight="bold" style={[styles.label, styles.sectionSpacing, { fontSize: labelFontSize }]}>
-          {isResident ? 'Anything else?' : 'Observations'}
+          {t(isResident ? 'observation.observationsResident' : 'observation.observationsCarer')}
         </AppText>
         <TextInput
           style={[
@@ -252,10 +254,10 @@ export default function ObservationScreen() {
           onPress={onSave}
           disabled={isSaving}
           accessibilityRole="button"
-          accessibilityLabel="Save"
+          accessibilityLabel={t('observation.save')}
         >
           <AppText weight="bold" style={[styles.saveButtonText, { fontSize: saveButtonFontSize }]}>
-            {isSaving ? 'Saving…' : 'Save'}
+            {isSaving ? t('observation.saving') : t('observation.save')}
           </AppText>
         </Pressable>
       </ScrollView>

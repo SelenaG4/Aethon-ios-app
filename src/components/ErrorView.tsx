@@ -2,6 +2,7 @@ import React from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { CircleAlert } from 'lucide-react-native'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../constants/theme'
+import { useTranslation } from '../lib/i18n'
 import AppText from './AppText'
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 }
 
 export default function ErrorView({ message, onRetry, isResident }: Props) {
+  const { t } = useTranslation()
   return (
     <View style={styles.container}>
       <CircleAlert size={64} color={COLORS.danger} />
@@ -22,10 +24,10 @@ export default function ErrorView({ message, onRetry, isResident }: Props) {
         style={[styles.button, isResident ? styles.buttonResident : styles.buttonStandard]}
         onPress={onRetry}
         accessibilityRole="button"
-        accessibilityLabel="Try again"
+        accessibilityLabel={t('common.tryAgain')}
       >
         <AppText weight="bold" style={[styles.buttonText, isResident && styles.buttonTextResident]}>
-          Try again
+          {t('common.tryAgain')}
         </AppText>
       </Pressable>
     </View>

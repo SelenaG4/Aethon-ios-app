@@ -26,6 +26,7 @@ import {
   startShift,
   subscribe,
 } from '../../lib/data'
+import { formatShortDayMonth, formatTime, formatWeekdayShortDate, TranslationKey, useTranslation } from '../../lib/i18n'
 import type { Shift } from '../../lib/mockData'
 import type { CarerStackParamList, CarerTabParamList } from '../../navigation/CarerNavigator'
 
@@ -34,35 +35,10 @@ type ClientsNavigation = CompositeNavigationProp<
   StackNavigationProp<CarerStackParamList>
 >
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
-function pad2(value: number): string {
-  return value < 10 ? `0${value}` : `${value}`
-}
-
-function greeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
-
-function formatTodayLong(): string {
-  const now = new Date()
-  return `${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}`
-}
-
-function formatLastNoteLabel(iso: string): string {
-  const date = new Date(iso)
-  const now = new Date()
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
-  const dayDiff = Math.round((startOfToday - startOfDate) / 86400000)
-  const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`
-  if (dayDiff === 0) return `Last note: today ${time}`
-  if (dayDiff === 1) return `Last note: yesterday ${time}`
-  return `Last note: ${date.getDate()} ${MONTHS[date.getMonth()]}`
+function greetingKey(hour: number): TranslationKey {
+  if (hour < 12) return 'common.goodMorning'
+  if (hour < 18) return 'common.goodAfternoon'
+  return 'common.goodEvening'
 }
 
 function renderSeparator() {
@@ -73,6 +49,7 @@ type LoadState = 'loading' | 'loaded' | 'error'
 
 export default function ClientsScreen() {
   const navigation = useNavigation<ClientsNavigation>()
+  const { t, language } = useTranslation()
   const [entries, setEntries] = useState<ResidentListEntry[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -146,30 +123,35 @@ export default function ClientsScreen() {
             onPress={onToggleShift}
             style={[styles.shiftButton, activeShift ? styles.shiftButtonActive : styles.shiftButtonInactive]}
             accessibilityRole="button"
-            accessibilityLabel={activeShift ? 'End shift' : 'Start shift'}
+            accessibilityLabel={activeShift ? t('clients.endShift') : t('clients.startShift')}
           >
             <AppText
               weight="bold"
               style={[styles.shiftButtonText, activeShift && styles.shiftButtonTextActive]}
             >
-              {activeShift ? 'End shift' : 'Start shift'}
+              {activeShift ? t('clients.endShift') : t('clients.startShift')}
             </AppText>
           </Pressable>
         </View>
         <ScreenHeader
-          title={`${greeting()}, ${CURRENT_CARER.name.split(' ')[0]}`}
-          subtitle={formatTodayLong()}
+          title={`${t(greetingKey(new Date().getHours()))}, ${CURRENT_CARER.name.split(' ')[0]}`}
+          subtitle={formatWeekdayShortDate(new Date(), language)}
         />
         {unreviewedCount > 0 ? (
           <Pressable
             onPress={() => navigation.navigate('ToCheck')}
             style={styles.toCheckLink}
             accessibilityRole="button"
-            accessibilityLabel={`${unreviewedCount} ${unreviewedCount === 1 ? 'note' : 'notes'} to check`}
+            accessibilityLabel={t(
+              unreviewedCount === 1 ? 'clients.notesToCheckOne' : 'clients.notesToCheckOther',
+              { count: unreviewedCount }
+            )}
           >
             <View style={styles.amberDot} />
             <AppText weight="semibold" style={styles.toCheckLinkText}>
-              {unreviewedCount} {unreviewedCount === 1 ? 'note' : 'notes'} to check
+              {t(unreviewedCount === 1 ? 'clients.notesToCheckOne' : 'clients.notesToCheckOther', {
+                count: unreviewedCount,
+              })}
             </AppText>
           </Pressable>
         ) : null}
@@ -178,11 +160,20 @@ export default function ClientsScreen() {
             onPress={() => navigation.navigate('ToCheck')}
             style={styles.outcomeLink}
             accessibilityRole="button"
-            accessibilityLabel={`${awaitingOutcomeCount} ${awaitingOutcomeCount === 1 ? 'escalation' : 'escalations'} awaiting outcome`}
+            accessibilityLabel={t(
+              awaitingOutcomeCount === 1
+                ? 'clients.escalationsAwaitingOne'
+                : 'clients.escalationsAwaitingOther',
+              { count: awaitingOutcomeCount }
+            )}
           >
             <AppText style={styles.outcomeLinkText}>
-              {awaitingOutcomeCount} {awaitingOutcomeCount === 1 ? 'escalation' : 'escalations'} awaiting
-              outcome
+              {t(
+                awaitingOutcomeCount === 1
+                  ? 'clients.escalationsAwaitingOne'
+                  : 'clients.escalationsAwaitingOther',
+                { count: awaitingOutcomeCount }
+              )}
             </AppText>
           </Pressable>
         ) : null}
@@ -192,7 +183,7 @@ export default function ClientsScreen() {
             style={styles.searchInput}
             value={query}
             onChangeText={setQuery}
-            placeholder="Search"
+            placeholder={t('clients.searchPlaceholder')}
             placeholderTextColor={COLORS.textMuted}
             autoCorrect={false}
             autoCapitalize="none"
@@ -203,7 +194,7 @@ export default function ClientsScreen() {
       {loadState === 'loading' ? (
         <LoadingView />
       ) : loadState === 'error' ? (
-        <ErrorView message="Could not load clients" onRetry={load} />
+        <ErrorView message={t('clients.loadError')} onRetry={load} />
       ) : (
         <FlatList
           data={filteredEntries}
@@ -213,7 +204,7 @@ export default function ClientsScreen() {
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
           }
           ItemSeparatorComponent={renderSeparator}
-          ListEmptyComponent={<EmptyView icon={Users} message="No clients found" />}
+          ListEmptyComponent={<EmptyView icon={Users} message={t('clients.emptyTitle')} />}
           renderItem={({ item }) => (
             <ClientRow
               entry={item}
@@ -232,9 +223,25 @@ export default function ClientsScreen() {
 }
 
 function ClientRow({ entry, onPress }: { entry: ResidentListEntry; onPress: () => void }) {
+  const { t, language } = useTranslation()
   const { resident, lastNoteAt, lastNoteStatus, lastNoteReviewedAt } = entry
   const fullName = `${resident.first_name} ${resident.last_name}`
   const needsChecking = lastNoteStatus === 'complete' && lastNoteReviewedAt === null
+
+  const lastNoteLabel = useCallback(
+    (iso: string) => {
+      const date = new Date(iso)
+      const now = new Date()
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+      const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+      const dayDiff = Math.round((startOfToday - startOfDate) / 86400000)
+      const time = formatTime(iso)
+      if (dayDiff === 0) return t('clients.lastNoteToday', { time })
+      if (dayDiff === 1) return t('clients.lastNoteYesterday', { time })
+      return t('clients.lastNoteDate', { date: formatShortDayMonth(iso, language) })
+    },
+    [t, language]
+  )
 
   return (
     <Card style={styles.row} onPress={onPress}>
@@ -246,20 +253,20 @@ function ClientRow({ entry, onPress }: { entry: ResidentListEntry; onPress: () =
         {lastNoteStatus === 'pending' ? (
           <View style={styles.rowStatusRow}>
             <ActivityIndicator size="small" color={COLORS.textMuted} />
-            <AppText style={styles.rowTranscribing}>Transcribing</AppText>
+            <AppText style={styles.rowTranscribing}>{t('clients.transcribing')}</AppText>
           </View>
         ) : lastNoteStatus === 'failed' ? (
-          <AppText style={styles.rowFailed}>Transcription unavailable</AppText>
+          <AppText style={styles.rowFailed}>{t('clients.transcriptionUnavailable')}</AppText>
         ) : needsChecking ? (
           <View style={styles.rowStatusRow}>
             <View style={styles.amberDot} />
             <AppText weight="semibold" style={styles.rowFailed}>
-              Needs checking
+              {t('clients.needsChecking')}
             </AppText>
           </View>
         ) : (
           <AppText style={styles.rowSecondary}>
-            {lastNoteAt ? formatLastNoteLabel(lastNoteAt) : 'No notes yet'}
+            {lastNoteAt ? lastNoteLabel(lastNoteAt) : t('clients.noNotesYet')}
           </AppText>
         )}
       </View>

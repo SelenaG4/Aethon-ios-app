@@ -14,6 +14,7 @@ import { ArrowLeft } from 'lucide-react-native'
 import { AppText } from '../../components'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import { updateResidentBaseline } from '../../lib/data'
+import { TranslationKey, useTranslation } from '../../lib/i18n'
 import type { MobilityAid } from '../../lib/mockData'
 import type { CarerStackParamList } from '../../navigation/CarerNavigator'
 
@@ -21,11 +22,11 @@ type BaselineRoute = RouteProp<CarerStackParamList, 'Baseline'>
 
 const CONDITION_COUNT_OPTIONS = [0, 1, 2, 3, 4, 5] as const
 
-const MOBILITY_OPTIONS: { value: MobilityAid; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'stick', label: 'Walking stick' },
-  { value: 'frame', label: 'Walking frame' },
-  { value: 'wheelchair', label: 'Wheelchair' },
+const MOBILITY_OPTIONS: { value: MobilityAid; labelKey: TranslationKey }[] = [
+  { value: 'none', labelKey: 'baseline.mobility.none' },
+  { value: 'stick', labelKey: 'baseline.mobility.stick' },
+  { value: 'frame', labelKey: 'baseline.mobility.frame' },
+  { value: 'wheelchair', labelKey: 'baseline.mobility.wheelchair' },
 ]
 
 function conditionCountLabel(value: number): string {
@@ -35,6 +36,7 @@ function conditionCountLabel(value: number): string {
 export default function BaselineScreen() {
   const navigation = useNavigation<NavigationProp<CarerStackParamList>>()
   const route = useRoute<BaselineRoute>()
+  const { t } = useTranslation()
   const { clientId, clientName } = route.params
 
   const [age, setAge] = useState('')
@@ -68,37 +70,37 @@ export default function BaselineScreen() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t('common.back')}
         >
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
         <AppText weight="bold" style={styles.headerTitle} numberOfLines={1}>
-          Baseline
+          {t('baseline.title')}
         </AppText>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Field label="Age">
+        <Field label={t('baseline.fieldAge')}>
           <TextInput
             style={styles.ageInput}
             value={age}
             onChangeText={(text) => setAge(text.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
-            placeholder="Age"
+            placeholder={t('baseline.agePlaceholder')}
             placeholderTextColor={COLORS.textMuted}
           />
         </Field>
 
-        <Field label="Lives alone">
+        <Field label={t('baseline.fieldLivesAlone')}>
           <View style={styles.row}>
             <ChoiceButton
-              label="Yes"
+              label={t('common.yes')}
               selected={livesAlone === true}
               onPress={() => setLivesAlone(true)}
               style={styles.flexButton}
             />
             <ChoiceButton
-              label="No"
+              label={t('common.no')}
               selected={livesAlone === false}
               onPress={() => setLivesAlone(false)}
               style={styles.flexButton}
@@ -106,7 +108,7 @@ export default function BaselineScreen() {
           </View>
         </Field>
 
-        <Field label="Long-term conditions">
+        <Field label={t('baseline.fieldConditions')}>
           <View style={styles.countRow}>
             {CONDITION_COUNT_OPTIONS.map((value) => (
               <Pressable
@@ -130,12 +132,12 @@ export default function BaselineScreen() {
           </View>
         </Field>
 
-        <Field label="Mobility aid">
+        <Field label={t('baseline.fieldMobility')}>
           <View style={styles.stack}>
             {MOBILITY_OPTIONS.map((option) => (
               <ChoiceButton
                 key={option.value}
-                label={option.label}
+                label={t(option.labelKey)}
                 selected={mobilityAid === option.value}
                 onPress={() => setMobilityAid(option.value)}
                 style={styles.stackedButton}
@@ -144,12 +146,12 @@ export default function BaselineScreen() {
           </View>
         </Field>
 
-        <Field label="Support already in place">
+        <Field label={t('baseline.fieldSupport')}>
           <TextInput
             style={styles.supportInput}
             value={supportNote}
             onChangeText={setSupportNote}
-            placeholder="Family visits twice a week"
+            placeholder={t('baseline.supportPlaceholder')}
             placeholderTextColor={COLORS.textMuted}
             multiline
             textAlignVertical="top"
@@ -161,10 +163,10 @@ export default function BaselineScreen() {
           onPress={onSave}
           disabled={!canSave || isSaving}
           accessibilityRole="button"
-          accessibilityLabel="Save"
+          accessibilityLabel={t('common.save')}
         >
           <AppText weight="bold" style={styles.saveButtonText}>
-            {isSaving ? 'Saving…' : 'Save'}
+            {isSaving ? t('common.saving') : t('common.save')}
           </AppText>
         </Pressable>
       </ScrollView>

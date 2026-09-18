@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft } from 'lucide-react-native'
 import { AppText, ScreenHeader } from '../../components'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
+import { useTranslation } from '../../lib/i18n'
 
 const WEB_PORTAL_URL = 'https://aethon-amber.vercel.app'
 
@@ -13,6 +14,7 @@ type Props = {
 
 // Family members and facility management use the web portal, not this app.
 export default function FamilyPortalScreen({ onBack }: Props) {
+  const { t } = useTranslation()
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
@@ -20,15 +22,15 @@ export default function FamilyPortalScreen({ onBack }: Props) {
           onPress={onBack}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t('common.back')}
         >
           <ArrowLeft size={20} color={COLORS.text} />
           <AppText weight="semibold" style={styles.backLabel}>
-            Back
+            {t('common.back')}
           </AppText>
         </Pressable>
 
-        <ScreenHeader title="Family or management" subtitle="Please use the web portal" />
+        <ScreenHeader title={t('familyPortal.title')} subtitle={t('familyPortal.subtitle')} />
 
         <AppText weight="semibold" style={styles.url}>
           {WEB_PORTAL_URL}
@@ -38,10 +40,10 @@ export default function FamilyPortalScreen({ onBack }: Props) {
           style={styles.openButton}
           onPress={() => Linking.openURL(WEB_PORTAL_URL)}
           accessibilityRole="button"
-          accessibilityLabel="Open in Safari"
+          accessibilityLabel={t('familyPortal.openInSafari')}
         >
           <AppText weight="bold" style={styles.openButtonText}>
-            Open in Safari
+            {t('familyPortal.openInSafari')}
           </AppText>
         </Pressable>
       </View>

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { NativeModules } from 'react-native'
 import {
   residents as initialResidents,
   medications as initialMedications,
@@ -42,8 +43,38 @@ const STORAGE_KEY = '@aethon/mock_data_v16'
 const VIEW_CHOICE_KEY = '@aethon/view_choice_v1'
 const CURRENT_SHIFT_KEY = '@aethon/current_shift_id_v1'
 const ONBOARDING_COMPLETE_KEY = '@aethon/onboarding_complete_v1'
+const LANGUAGE_KEY = '@aethon/language_v1'
 
 export type ViewChoice = 'carer' | 'resident'
+
+// The app's display language. Independent of TRANSCRIPTION_LANGUAGE
+// (src/constants/config.ts), which is what whisper.rn listens for in a
+// voice note and stays pinned to German regardless of this setting.
+export type Language = 'en' | 'de' | 'fr' | 'it'
+
+// Used only until the resident/carer explicitly picks a language in
+// Settings — after that, the persisted choice always wins. Reads the
+// device's own locale via RN's built-in SettingsManager (iOS), so no extra
+// native dependency is needed just for this.
+function detectDeviceLanguage(): Language {
+  const rawLocale: unknown =
+    NativeModules.SettingsManager?.settings?.AppleLocale ??
+    NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] ??
+    NativeModules.I18nManager?.localeIdentifier
+  const code = typeof rawLocale === 'string' ? rawLocale.slice(0, 2).toLowerCase() : ''
+  if (code === 'de' || code === 'fr' || code === 'it') return code
+  return 'en'
+}
+
+export async function getLanguage(): Promise<Language> {
+  const value = await AsyncStorage.getItem(LANGUAGE_KEY)
+  if (value === 'en' || value === 'de' || value === 'fr' || value === 'it') return value
+  return detectDeviceLanguage()
+}
+
+export async function setLanguage(language: Language): Promise<void> {
+  await AsyncStorage.setItem(LANGUAGE_KEY, language)
+}
 
 // There is no sign-in yet, so every carer-facing screen runs as this fixed sample user.
 export const CURRENT_CARER = {

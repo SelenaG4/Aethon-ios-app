@@ -1,5 +1,6 @@
 import { COLORS } from '../constants/theme'
-import type { HandoverEscalationEntry, HandoverNoteEntry } from './data'
+import { formatLongDate, formatTime, translateVisitType, type TranslationKey } from './i18n'
+import type { HandoverEscalationEntry, HandoverNoteEntry, Language } from './data'
 
 export type HandoverData = {
   carerName: string
@@ -11,21 +12,7 @@ export type HandoverData = {
   openEscalations: HandoverEscalationEntry[]
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-function pad2(value: number): string {
-  return value < 10 ? `0${value}` : `${value}`
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-}
+type Translate = (key: TranslationKey, params?: Record<string, string | number>) => string
 
 function escapeHtml(text: string): string {
   return text
@@ -38,9 +25,9 @@ function escapeHtml(text: string): string {
 // Guide's own hex values (docs/BUILD_GUIDE.txt, 7.3) are replaced with the
 // matching theme.ts tokens per CLAUDE.md, so the PDF uses Aethon's actual
 // brand colour instead of the guide's example green.
-export function buildHandoverHtml(data: HandoverData): string {
+export function buildHandoverHtml(data: HandoverData, t: Translate, language: Language): string {
   const shiftRange = `${formatTime(data.shiftStartIso)} – ${
-    data.shiftEndIso ? formatTime(data.shiftEndIso) : 'ongoing'
+    data.shiftEndIso ? formatTime(data.shiftEndIso) : t('handover.ongoing')
   }`
 
   const clientsSeenRows = data.notes
@@ -49,7 +36,7 @@ export function buildHandoverHtml(data: HandoverData): string {
         (note) => `
       <tr>
         <td>${escapeHtml(entry.residentName)}</td>
-        <td>${escapeHtml(note.visit_type ?? '—')}</td>
+        <td>${escapeHtml(note.visit_type ? translateVisitType(note.visit_type, t) : '—')}</td>
         <td>${formatTime(note.created_at)}</td>
       </tr>`
       )
@@ -76,7 +63,7 @@ export function buildHandoverHtml(data: HandoverData): string {
     data.openEscalations.length === 0
       ? ''
       : `
-    <h2>Open escalations</h2>
+    <h2>${escapeHtml(t('handover.pdfOpenEscalationsHeading'))}</h2>
     ${data.openEscalations
       .map(
         (entry) => `
@@ -111,63 +98,64 @@ export function buildHandoverHtml(data: HandoverData): string {
 </style>
 </head>
 <body>
-  <h1>Shift handover</h1>
+  <h1>${escapeHtml(t('handover.pdfTitle'))}</h1>
   <div class="meta">
     ${escapeHtml(data.carerName)}<br/>
-    ${formatDate(data.shiftStartIso)}<br/>
+    ${formatLongDate(data.shiftStartIso, language)}<br/>
     ${shiftRange}
   </div>
 
   <table class="summary">
     <tr>
-      <td><span class="stat-value">${data.clientsSeenCount}</span><span class="stat-label">Clients seen</span></td>
-      <td><span class="stat-value">${data.noteCount}</span><span class="stat-label">Notes recorded</span></td>
-      <td><span class="stat-value">${data.openEscalations.length}</span><span class="stat-label">Escalations open</span></td>
+      <td><span class="stat-value">${data.clientsSeenCount}</span><span class="stat-label">${escapeHtml(t('handover.clientsSeen'))}</span></td>
+      <td><span class="stat-value">${data.noteCount}</span><span class="stat-label">${escapeHtml(t('handover.notesRecorded'))}</span></td>
+      <td><span class="stat-value">${data.openEscalations.length}</span><span class="stat-label">${escapeHtml(t('handover.escalationsOpen'))}</span></td>
     </tr>
   </table>
 
-  <h2>Clients seen</h2>
+  <h2>${escapeHtml(t('handover.pdfClientsSeenHeading'))}</h2>
   <table>
-    <tr><th>Client</th><th>Visit type</th><th>Time</th></tr>
+    <tr><th>${escapeHtml(t('handover.clientsSeen'))}</th><th>${escapeHtml(t('noteReview.visitType'))}</th><th>${escapeHtml(t('handover.timeColumn'))}</th></tr>
     ${clientsSeenRows}
   </table>
 
-  <h2>Notes</h2>
+  <h2>${escapeHtml(t('handover.pdfNotesHeading'))}</h2>
   ${notesSections}
   ${escalationsSection}
 
-  <div class="footer">Care coordination summary. Not an official medical record.</div>
+  <div class="footer">${escapeHtml(t('handover.footer'))}</div>
 </body>
 </html>`
 }
 
 // Plain text rendering of the same content — many services paste handovers
 // into an existing system, for which text is more useful than a document.
-export function buildHandoverText(data: HandoverData): string {
+export function buildHandoverText(data: HandoverData, t: Translate, language: Language): string {
   const shiftRange = `${formatTime(data.shiftStartIso)} - ${
-    data.shiftEndIso ? formatTime(data.shiftEndIso) : 'ongoing'
+    data.shiftEndIso ? formatTime(data.shiftEndIso) : t('handover.ongoing')
   }`
 
   const lines: string[] = [
-    'Shift handover',
+    t('handover.pdfTitle'),
     data.carerName,
-    formatDate(data.shiftStartIso),
+    formatLongDate(data.shiftStartIso, language),
     shiftRange,
     '',
-    `Clients seen: ${data.clientsSeenCount}`,
-    `Notes recorded: ${data.noteCount}`,
-    `Escalations open: ${data.openEscalations.length}`,
+    `${t('handover.clientsSeen')}: ${data.clientsSeenCount}`,
+    `${t('handover.notesRecorded')}: ${data.noteCount}`,
+    `${t('handover.escalationsOpen')}: ${data.openEscalations.length}`,
     '',
-    'CLIENTS SEEN',
+    t('handover.pdfClientsSeenHeading').toUpperCase(),
   ]
 
   for (const entry of data.notes) {
     for (const note of entry.notes) {
-      lines.push(`${entry.residentName} - ${note.visit_type ?? 'Visit'} - ${formatTime(note.created_at)}`)
+      const visit = note.visit_type ? translateVisitType(note.visit_type, t) : t('handover.visitFallback')
+      lines.push(`${entry.residentName} - ${visit} - ${formatTime(note.created_at)}`)
     }
   }
 
-  lines.push('', 'NOTES')
+  lines.push('', t('handover.pdfNotesHeading').toUpperCase())
   for (const entry of data.notes) {
     lines.push(entry.residentName)
     for (const note of entry.notes) {
@@ -176,13 +164,13 @@ export function buildHandoverText(data: HandoverData): string {
   }
 
   if (data.openEscalations.length > 0) {
-    lines.push('', 'OPEN ESCALATIONS')
+    lines.push('', t('handover.pdfOpenEscalationsHeading').toUpperCase())
     for (const entry of data.openEscalations) {
       lines.push(`${entry.residentName} - ${entry.escalation.reason} - ${formatTime(entry.escalation.created_at)}`)
     }
   }
 
-  lines.push('', 'Care coordination summary. Not an official medical record.')
+  lines.push('', t('handover.footer'))
 
   return lines.join('\n')
 }

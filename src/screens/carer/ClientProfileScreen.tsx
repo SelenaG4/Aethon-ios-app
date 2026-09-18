@@ -8,7 +8,7 @@ import {
   useNavigation,
   useRoute,
 } from '@react-navigation/native'
-import { ArrowLeft, FileText, HeartPulse, Mic } from 'lucide-react-native'
+import { ArrowLeft, Check, FileText, HeartPulse, Mic } from 'lucide-react-native'
 import { AppText, EmptyView, ErrorView, LoadingView } from '../../components'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import {
@@ -18,10 +18,23 @@ import {
   getMedications,
   getResident,
   getVisitNotes,
+  Language,
   recordEscalationOutcome,
   subscribe,
 } from '../../lib/data'
 import { moodBandColor, painBandColor } from '../../lib/observations'
+import {
+  formatMonthYear as formatMonthYearI18n,
+  formatShortDateTime,
+  formatShortYearDate,
+  LANGUAGE_LABELS,
+  OUTCOME_OPTIONS,
+  translateOutcome,
+  translateTaskList,
+  translateVisitType,
+  TranslationKey,
+  useTranslation,
+} from '../../lib/i18n'
 import type {
   CareStage,
   CareStageHistoryEntry,
@@ -39,32 +52,28 @@ type ClientProfileNavigation = NavigationProp<CarerStackParamList>
 
 type ProfileTabKey = 'profile' | 'notes' | 'history'
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-const MOBILITY_AID_LABELS: Record<MobilityAid, string> = {
-  none: 'None',
-  stick: 'Walking stick',
-  frame: 'Walking frame',
-  wheelchair: 'Wheelchair',
+const MOBILITY_AID_KEYS: Record<MobilityAid, TranslationKey> = {
+  none: 'clientProfile.mobility.none',
+  stick: 'clientProfile.mobility.stick',
+  frame: 'clientProfile.mobility.frame',
+  wheelchair: 'clientProfile.mobility.wheelchair',
 }
 
 // Kept as the guide's own plain labels for now — CLAUDE.md says these will
 // be checked against the vocabulary carers actually use in a later pass.
-const CARE_STAGE_LABELS: Record<CareStage, string> = {
-  independent: 'Living independently',
-  family_supported: 'Supported by family',
-  professionally_supported: 'Professional care at home',
-  residential: 'In a care facility',
+const CARE_STAGE_KEYS: Record<CareStage, TranslationKey> = {
+  independent: 'clientProfile.careStage.independent',
+  family_supported: 'clientProfile.careStage.family_supported',
+  professionally_supported: 'clientProfile.careStage.professionally_supported',
+  residential: 'clientProfile.careStage.residential',
 }
 
-function formatDob(dob: string): string {
-  const d = new Date(dob)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+function formatDob(dob: string, language: Language): string {
+  return formatShortYearDate(dob, language)
 }
 
-function formatMonthYear(iso: string): string {
-  const d = new Date(iso)
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+function formatMonthYear(iso: string, language: Language): string {
+  return formatMonthYearI18n(iso, language)
 }
 
 function calculateAge(dob: string): number {
@@ -111,6 +120,7 @@ function groupMedications(medications: Medication[]): MedicationGroup[] {
 export default function ClientProfileScreen() {
   const navigation = useNavigation<ClientProfileNavigation>()
   const route = useRoute<ClientProfileRoute>()
+  const { t } = useTranslation()
   const { clientId, clientName } = route.params
   const [resident, setResident] = useState<Resident | null>(null)
   const [medications, setMedications] = useState<Medication[]>([])
@@ -167,22 +177,22 @@ export default function ClientProfileScreen() {
   useEffect(() => {
     if (route.params.savedBaseline && !consumedSavedBaseline.current) {
       consumedSavedBaseline.current = true
-      setConfirmationMessage('Baseline recorded')
+      setConfirmationMessage(t('clientProfile.baselineRecorded'))
       const timer = setTimeout(() => setConfirmationMessage(null), 2000)
       return () => clearTimeout(timer)
     }
-  }, [route.params.savedBaseline])
+  }, [route.params.savedBaseline, t])
 
   useEffect(() => {
     if (route.params.savedEscalation && !consumedSavedEscalation.current) {
       consumedSavedEscalation.current = true
       // Recorded, not sent — delivery through either control on
       // EscalationScreen is never confirmed.
-      setConfirmationMessage('Escalation recorded')
+      setConfirmationMessage(t('clientProfile.escalationRecorded'))
       const timer = setTimeout(() => setConfirmationMessage(null), 2000)
       return () => clearTimeout(timer)
     }
-  }, [route.params.savedEscalation])
+  }, [route.params.savedEscalation, t])
 
   const openBaseline = useCallback(() => {
     navigation.navigate('Baseline', { clientId, clientName })
@@ -228,7 +238,7 @@ export default function ClientProfileScreen() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t('common.back')}
         >
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
@@ -239,7 +249,7 @@ export default function ClientProfileScreen() {
           onPress={openObservation}
           style={styles.iconButton}
           accessibilityRole="button"
-          accessibilityLabel="Log observation"
+          accessibilityLabel={t('clientProfile.logObservation')}
         >
           <HeartPulse size={20} color={COLORS.primary} />
         </Pressable>
@@ -247,11 +257,11 @@ export default function ClientProfileScreen() {
           onPress={openVoiceNote}
           style={styles.recordButton}
           accessibilityRole="button"
-          accessibilityLabel="Record note"
+          accessibilityLabel={t('clientProfile.recordNote')}
         >
           <Mic size={18} color={COLORS.primary} />
           <AppText weight="semibold" style={styles.recordButtonText}>
-            Record note
+            {t('clientProfile.recordNote')}
           </AppText>
         </Pressable>
       </View>
@@ -265,13 +275,13 @@ export default function ClientProfileScreen() {
       ) : null}
 
       <View style={styles.tabBar}>
-        <TabButton label="Profile" active={tab === 'profile'} onPress={() => setTab('profile')} />
-        <TabButton label="Notes" active={tab === 'notes'} onPress={() => setTab('notes')} />
-        <TabButton label="History" active={tab === 'history'} onPress={() => setTab('history')} />
+        <TabButton label={t('clientProfile.tabProfile')} active={tab === 'profile'} onPress={() => setTab('profile')} />
+        <TabButton label={t('clientProfile.tabNotes')} active={tab === 'notes'} onPress={() => setTab('notes')} />
+        <TabButton label={t('clientProfile.tabHistory')} active={tab === 'history'} onPress={() => setTab('history')} />
       </View>
 
       {loadError ? (
-        <ErrorView message="Could not load this client" onRetry={load} />
+        <ErrorView message={t('clientProfile.loadError')} onRetry={load} />
       ) : tab === 'profile' ? (
         resident ? (
           <ProfileTab
@@ -370,6 +380,7 @@ function ProfileTab({
   onOpenCareStageModal: () => void
   onOpenEscalation: () => void
 }) {
+  const { t, language, setLanguage } = useTranslation()
   const medicationGroups = groupMedications(medications.filter((m) => m.active))
   const contacts = [...resident.emergency_contacts].sort((a, b) => a.priority - b.priority)
   const latestTransition = careStageHistory[0]
@@ -382,10 +393,10 @@ function ProfileTab({
             onPress={onOpenBaseline}
             hitSlop={{ top: 17, bottom: 17, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Baseline not yet recorded"
+            accessibilityLabel={t('clientProfile.baselineNotRecorded')}
           >
             <AppText weight="semibold" style={styles.baselinePrompt}>
-              Baseline not yet recorded
+              {t('clientProfile.baselineNotRecorded')}
             </AppText>
           </Pressable>
         ) : null}
@@ -393,41 +404,44 @@ function ProfileTab({
           {resident.first_name} {resident.last_name}
         </AppText>
         <AppText style={styles.detailText}>
-          {formatDob(resident.date_of_birth)} · Age {calculateAge(resident.date_of_birth)}
+          {formatDob(resident.date_of_birth, language)} ·{' '}
+          {t('clientProfile.age', { age: calculateAge(resident.date_of_birth) })}
         </AppText>
         {resident.room_number ? (
-          <AppText style={styles.detailText}>Room {resident.room_number}</AppText>
+          <AppText style={styles.detailText}>{t('clientProfile.room', { room: resident.room_number })}</AppText>
         ) : null}
       </Section>
 
       <Section borderColor={COLORS.primary}>
         <View style={styles.careStageHeadingRow}>
           <AppText weight="bold" style={[styles.sectionHeading, styles.careStageHeadingText]}>
-            Living situation
+            {t('clientProfile.livingSituation')}
           </AppText>
           <Pressable
             onPress={onOpenCareStageModal}
             hitSlop={{ top: 17, bottom: 17, left: 12, right: 12 }}
             accessibilityRole="button"
-            accessibilityLabel="Change living situation"
+            accessibilityLabel={t('clientProfile.change')}
           >
             <AppText weight="semibold" style={styles.changeLink}>
-              Change
+              {t('clientProfile.change')}
             </AppText>
           </Pressable>
         </View>
         <View style={styles.stagePill}>
           <AppText weight="bold" style={styles.stagePillText}>
-            {CARE_STAGE_LABELS[resident.care_stage]}
+            {t(CARE_STAGE_KEYS[resident.care_stage])}
           </AppText>
         </View>
         <AppText style={styles.sinceText}>
-          Since {formatMonthYear(resident.care_stage_estimated_since)}
+          {t('clientProfile.since', { date: formatMonthYear(resident.care_stage_estimated_since, language) })}
         </AppText>
         {latestTransition?.from_stage ? (
           <AppText style={styles.sinceText}>
-            Previously {CARE_STAGE_LABELS[latestTransition.from_stage]} until{' '}
-            {formatMonthYear(latestTransition.estimated_since)}
+            {t('clientProfile.previouslyUntil', {
+              stage: t(CARE_STAGE_KEYS[latestTransition.from_stage]),
+              date: formatMonthYear(latestTransition.estimated_since, language),
+            })}
           </AppText>
         ) : null}
       </Section>
@@ -435,18 +449,26 @@ function ProfileTab({
       {resident.baseline_recorded_at !== null ? (
         <Section borderColor={COLORS.textMuted}>
           <AppText weight="bold" style={styles.sectionHeading}>
-            Baseline at enrolment
+            {t('clientProfile.baselineAtEnrolment')}
           </AppText>
-          <BaselineRow label="Age" value={`${resident.baseline_age}`} />
-          <BaselineRow label="Lives alone" value={resident.baseline_lives_alone ? 'Yes' : 'No'} />
-          <BaselineRow label="Long-term conditions" value={conditionCountDisplay(resident.baseline_condition_count)} />
+          <BaselineRow label={t('clientProfile.baselineFieldAge')} value={`${resident.baseline_age}`} />
           <BaselineRow
-            label="Mobility aid"
-            value={resident.baseline_mobility_aid ? MOBILITY_AID_LABELS[resident.baseline_mobility_aid] : '—'}
+            label={t('clientProfile.baselineFieldLivesAlone')}
+            value={resident.baseline_lives_alone ? t('common.yes') : t('common.no')}
           />
-          <BaselineRow label="Support in place" value={resident.baseline_support_note || '—'} />
+          <BaselineRow
+            label={t('clientProfile.baselineFieldConditions')}
+            value={conditionCountDisplay(resident.baseline_condition_count)}
+          />
+          <BaselineRow
+            label={t('clientProfile.baselineFieldMobility')}
+            value={
+              resident.baseline_mobility_aid ? t(MOBILITY_AID_KEYS[resident.baseline_mobility_aid]) : '—'
+            }
+          />
+          <BaselineRow label={t('clientProfile.baselineFieldSupport')} value={resident.baseline_support_note || '—'} />
           <AppText style={styles.baselineRecordedAt}>
-            Recorded {formatDob(resident.baseline_recorded_at)}
+            {t('clientProfile.baselineRecordedAt', { date: formatDob(resident.baseline_recorded_at, language) })}
           </AppText>
         </Section>
       ) : null}
@@ -455,10 +477,10 @@ function ProfileTab({
 
       <Section borderColor={COLORS.danger}>
         <AppText weight="bold" style={[styles.sectionHeading, { color: COLORS.danger }]}>
-          Allergies
+          {t('clientProfile.allergies')}
         </AppText>
         {resident.allergies.length === 0 ? (
-          <AppText style={styles.emptyNote}>None recorded</AppText>
+          <AppText style={styles.emptyNote}>{t('clientProfile.noneRecorded')}</AppText>
         ) : (
           <View style={styles.chipRow}>
             {resident.allergies.map((allergy) => (
@@ -474,10 +496,10 @@ function ProfileTab({
 
       <Section borderColor={COLORS.amber}>
         <AppText weight="bold" style={styles.sectionHeading}>
-          In her own words
+          {t('clientProfile.inHerOwnWords')}
         </AppText>
         {resident.independence_goals.length === 0 ? (
-          <AppText style={styles.emptyNote}>No goals recorded yet</AppText>
+          <AppText style={styles.emptyNote}>{t('clientProfile.noGoalsYet')}</AppText>
         ) : (
           resident.independence_goals.map((goal, index) => (
             <AppText key={index} style={styles.goalText}>
@@ -489,7 +511,7 @@ function ProfileTab({
 
       <Section borderColor={COLORS.primary}>
         <AppText weight="bold" style={styles.sectionHeading}>
-          Medications ({medicationGroups.length})
+          {t('clientProfile.medicationsCount', { count: medicationGroups.length })}
         </AppText>
         {medicationGroups.map((group) => (
           <View key={group.key} style={styles.medicationRow}>
@@ -506,14 +528,12 @@ function ProfileTab({
             </View>
           </View>
         ))}
-        <AppText style={styles.medicationFootnote}>
-          Reference only. Not a medication administration record.
-        </AppText>
+        <AppText style={styles.medicationFootnote}>{t('clientProfile.medicationFootnote')}</AppText>
       </Section>
 
       <Section borderColor={COLORS.blue}>
         <AppText weight="bold" style={styles.sectionHeading}>
-          Physician
+          {t('clientProfile.physician')}
         </AppText>
         <AppText style={styles.physicianName}>{resident.physician_name}</AppText>
         <AppText style={[styles.detailText, { color: COLORS.blue }]}>{resident.physician_email}</AppText>
@@ -521,17 +541,17 @@ function ProfileTab({
           onPress={onOpenEscalation}
           style={styles.raiseButton}
           accessibilityRole="button"
-          accessibilityLabel="Raise with physician"
+          accessibilityLabel={t('clientProfile.raiseWithPhysician')}
         >
           <AppText weight="bold" style={styles.raiseButtonText}>
-            Raise with physician
+            {t('clientProfile.raiseWithPhysician')}
           </AppText>
         </Pressable>
       </Section>
 
       <Section borderColor={COLORS.blue}>
         <AppText weight="bold" style={styles.sectionHeading}>
-          Contacts
+          {t('clientProfile.contacts')}
         </AppText>
         {contacts.map((contact) => (
           <View key={contact.name} style={styles.contactRow}>
@@ -543,6 +563,30 @@ function ProfileTab({
             </AppText>
           </View>
         ))}
+      </Section>
+
+      <Section borderColor={COLORS.border}>
+        <AppText weight="bold" style={styles.sectionHeading}>
+          {t('profile.language')}
+        </AppText>
+        {(['en', 'de', 'fr', 'it'] as Language[]).map((code) => {
+          const selected = language === code
+          return (
+            <Pressable
+              key={code}
+              onPress={() => setLanguage(code)}
+              style={styles.languageRow}
+              accessibilityRole="button"
+              accessibilityLabel={LANGUAGE_LABELS[code]}
+              accessibilityState={{ selected }}
+            >
+              <AppText weight={selected ? 'bold' : 'regular'} style={styles.languageRowText}>
+                {LANGUAGE_LABELS[code]}
+              </AppText>
+              {selected ? <Check size={20} color={COLORS.primary} /> : null}
+            </Pressable>
+          )
+        })}
       </Section>
     </ScrollView>
   )
@@ -592,18 +636,21 @@ function flaggedPrompts(notes: VisitNote[]): string[] {
 }
 
 function TrendsCard({ healthLogs, notes }: { healthLogs: HealthLog[]; notes: VisitNote[] }) {
+  const { t, language } = useTranslation()
   const flags = flaggedPrompts(notes)
 
   if (healthLogs.length === 0) {
     return (
       <Section borderColor={COLORS.border}>
         <AppText weight="bold" style={styles.sectionHeading}>
-          Recent observations
+          {t('clientProfile.recentObservations')}
         </AppText>
         {flags.length > 0 ? (
-          <AppText style={styles.flaggedPromptsText}>Flagged to ask about: {flags.join(', ')}</AppText>
+          <AppText style={styles.flaggedPromptsText}>
+            {t('clientProfile.flaggedToAskAbout', { items: flags.join(', ') })}
+          </AppText>
         ) : null}
-        <AppText style={styles.emptyNote}>No observations recorded yet</AppText>
+        <AppText style={styles.emptyNote}>{t('clientProfile.noObservationsYet')}</AppText>
       </Section>
     )
   }
@@ -620,13 +667,15 @@ function TrendsCard({ healthLogs, notes }: { healthLogs: HealthLog[]; notes: Vis
   return (
     <Section borderColor={COLORS.border}>
       <AppText weight="bold" style={styles.sectionHeading}>
-        Recent observations
+        {t('clientProfile.recentObservations')}
       </AppText>
       {flags.length > 0 ? (
-        <AppText style={styles.flaggedPromptsText}>Flagged to ask about: {flags.join(', ')}</AppText>
+        <AppText style={styles.flaggedPromptsText}>
+          {t('clientProfile.flaggedToAskAbout', { items: flags.join(', ') })}
+        </AppText>
       ) : null}
 
-      <AppText style={styles.trendLabel}>Mood</AppText>
+      <AppText style={styles.trendLabel}>{t('clientProfile.mood')}</AppText>
       <View style={styles.dayRow}>
         {days.map((day) => {
           const value = valueForDay(healthLogs, day, 'mood')
@@ -638,11 +687,11 @@ function TrendsCard({ healthLogs, notes }: { healthLogs: HealthLog[]; notes: Vis
           )
         })}
       </View>
-      <AppText style={styles.trendCaption}>Last 14 days</AppText>
+      <AppText style={styles.trendCaption}>{t('clientProfile.last14Days')}</AppText>
 
       {weightReadings.length > 0 ? (
         <>
-          <AppText style={[styles.trendLabel, styles.trendSpacing]}>Weight</AppText>
+          <AppText style={[styles.trendLabel, styles.trendSpacing]}>{t('clientProfile.weight')}</AppText>
           <View style={styles.sparklineRow}>
             {weightReadings.map((log, index) => {
               const isLatest = index === weightReadings.length - 1
@@ -660,14 +709,17 @@ function TrendsCard({ healthLogs, notes }: { healthLogs: HealthLog[]; notes: Vis
             })}
           </View>
           <AppText style={styles.trendCaption2}>
-            First recorded {weightReadings[0].weight_kg} kg on {formatDob(weightReadings[0].created_at)}, most
-            recent {weightReadings[weightReadings.length - 1].weight_kg} kg on{' '}
-            {formatDob(weightReadings[weightReadings.length - 1].created_at)}
+            {t('clientProfile.weightSummary', {
+              firstValue: weightReadings[0].weight_kg,
+              firstDate: formatDob(weightReadings[0].created_at, language),
+              lastValue: weightReadings[weightReadings.length - 1].weight_kg,
+              lastDate: formatDob(weightReadings[weightReadings.length - 1].created_at, language),
+            })}
           </AppText>
         </>
       ) : null}
 
-      <AppText style={[styles.trendLabel, styles.trendSpacing]}>Pain</AppText>
+      <AppText style={[styles.trendLabel, styles.trendSpacing]}>{t('clientProfile.pain')}</AppText>
       <View style={styles.dayRow}>
         {days.map((day) => {
           const value = valueForDay(healthLogs, day, 'pain')
@@ -679,26 +731,10 @@ function TrendsCard({ healthLogs, notes }: { healthLogs: HealthLog[]; notes: Vis
           )
         })}
       </View>
-      <AppText style={styles.trendCaption}>Last 14 days</AppText>
+      <AppText style={styles.trendCaption}>{t('clientProfile.last14Days')}</AppText>
     </Section>
   )
 }
-
-function pad2(value: number): string {
-  return value < 10 ? `0${value}` : `${value}`
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-}
-
-const OUTCOME_OPTIONS = [
-  'Physician reviewed, change made',
-  'Physician reviewed, no change',
-  'Raised, no response yet',
-  'Not raised in the end',
-]
 
 function NotesTab({
   notes,
@@ -711,10 +747,11 @@ function NotesTab({
   onOpenNote: (noteId: string) => void
   onRecordOutcome: (escalationId: string, outcome: string) => void
 }) {
+  const { t } = useTranslation()
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
       {notes.length === 0 ? (
-        <EmptyView icon={FileText} message="No notes recorded yet" />
+        <EmptyView icon={FileText} message={t('clientProfile.noNotesRecordedYet')} />
       ) : (
         notes.map((note) => (
           <NoteRow
@@ -741,6 +778,7 @@ function NoteRow({
   onPress: () => void
   onRecordOutcome: (escalationId: string, outcome: string) => void
 }) {
+  const { t, language } = useTranslation()
   const isUnreviewedComplete = note.transcription_status === 'complete' && note.reviewed_at === null
   const isFailed = note.transcription_status === 'failed'
   const isTappable = isUnreviewedComplete || isFailed
@@ -748,58 +786,59 @@ function NoteRow({
   const content = (
     <>
       <AppText weight="bold" style={styles.noteMeta}>
-        {formatDateTime(note.created_at)}
-        {note.visit_type ? ` · ${note.visit_type}` : ''}
+        {formatShortDateTime(note.created_at, language)}
+        {note.visit_type ? ` · ${translateVisitType(note.visit_type, t)}` : ''}
       </AppText>
       {note.physician_flagged && escalation ? (
         escalation.flag_outcome === null ? (
           <View style={styles.outcomeBar}>
             <AppText weight="bold" style={styles.outcomeBarTitle}>
-              Raised with physician on {formatDateTime(escalation.created_at)}
+              {t('clientProfile.raisedWithPhysicianOn', {
+                date: formatShortDateTime(escalation.created_at, language),
+              })}
             </AppText>
-            <AppText style={styles.outcomeQuestion}>What happened?</AppText>
+            <AppText style={styles.outcomeQuestion}>{t('clientProfile.whatHappened')}</AppText>
             <View style={styles.outcomeOptions}>
               {OUTCOME_OPTIONS.map((option) => (
                 <Pressable
-                  key={option}
-                  onPress={() => onRecordOutcome(escalation.id, option)}
+                  key={option.value}
+                  onPress={() => onRecordOutcome(escalation.id, option.value)}
                   style={styles.outcomeButton}
                   accessibilityRole="button"
-                  accessibilityLabel={option}
+                  accessibilityLabel={t(option.labelKey)}
                 >
-                  <AppText style={styles.outcomeButtonText}>{option}</AppText>
+                  <AppText style={styles.outcomeButtonText}>{t(option.labelKey)}</AppText>
                 </Pressable>
               ))}
             </View>
           </View>
         ) : (
           <AppText style={styles.outcomeSummary}>
-            {escalation.flag_outcome} - {formatDateTime(escalation.flag_outcome_at as string)}
+            {translateOutcome(escalation.flag_outcome, t)} -{' '}
+            {formatShortDateTime(escalation.flag_outcome_at as string, language)}
           </AppText>
         )
       ) : null}
       {note.transcription_status === 'pending' ? (
         <View style={styles.noteStatusRow}>
           <ActivityIndicator size="small" color={COLORS.textMuted} />
-          <AppText style={styles.noteTranscribing}>Transcribing</AppText>
+          <AppText style={styles.noteTranscribing}>{t('clientProfile.transcribing')}</AppText>
         </View>
       ) : isFailed ? (
-        <AppText style={styles.noteFailed}>
-          Transcription unavailable. Tap to type the note.
-        </AppText>
+        <AppText style={styles.noteFailed}>{t('clientProfile.transcriptionUnavailable')}</AppText>
       ) : (
         <>
           {isUnreviewedComplete ? (
             <View style={styles.needsCheckingRow}>
               <View style={styles.amberDot} />
               <AppText weight="semibold" style={styles.needsCheckingText}>
-                Needs checking
+                {t('clientProfile.needsChecking')}
               </AppText>
             </View>
           ) : null}
           <AppText style={styles.noteTranscript}>{note.transcript}</AppText>
           {note.tasks_completed ? (
-            <AppText style={styles.noteTasks}>{note.tasks_completed}</AppText>
+            <AppText style={styles.noteTasks}>{translateTaskList(note.tasks_completed, t)}</AppText>
           ) : null}
         </>
       )}
@@ -812,7 +851,7 @@ function NoteRow({
         onPress={onPress}
         style={styles.noteCard}
         accessibilityRole="button"
-        accessibilityLabel="Review note"
+        accessibilityLabel={t('clientProfile.reviewNote')}
       >
         {content}
       </Pressable>
@@ -823,24 +862,29 @@ function NoteRow({
 }
 
 function HistoryTab({ careStageHistory }: { careStageHistory: CareStageHistoryEntry[] }) {
+  const { t, language } = useTranslation()
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
       <Section borderColor={COLORS.textMuted}>
         <AppText weight="bold" style={styles.sectionHeading}>
-          Transitions
+          {t('clientProfile.transitions')}
         </AppText>
         {careStageHistory.length === 0 ? (
-          <AppText style={styles.emptyNote}>No transitions recorded</AppText>
+          <AppText style={styles.emptyNote}>{t('clientProfile.noTransitionsRecorded')}</AppText>
         ) : (
           careStageHistory.map((entry) => (
             <View key={entry.id} style={styles.transitionRow}>
               <AppText weight="bold" style={styles.transitionLabel}>
-                {entry.from_stage ? `${CARE_STAGE_LABELS[entry.from_stage]} → ` : ''}
-                {CARE_STAGE_LABELS[entry.to_stage]}
+                {entry.from_stage ? `${t(CARE_STAGE_KEYS[entry.from_stage])} → ` : ''}
+                {t(CARE_STAGE_KEYS[entry.to_stage])}
               </AppText>
-              <AppText style={styles.detailText}>Since {formatDob(entry.estimated_since)}</AppText>
+              <AppText style={styles.detailText}>
+                {t('clientProfile.transitionSince', { date: formatDob(entry.estimated_since, language) })}
+              </AppText>
               {!sameDay(entry.estimated_since, entry.observed_at) ? (
-                <AppText style={styles.detailText}>Recorded {formatDob(entry.observed_at)}</AppText>
+                <AppText style={styles.detailText}>
+                  {t('clientProfile.transitionRecorded', { date: formatDob(entry.observed_at, language) })}
+                </AppText>
               ) : null}
               {entry.note ? <AppText style={styles.transitionNote}>{entry.note}</AppText> : null}
             </View>
@@ -1152,6 +1196,16 @@ const styles = StyleSheet.create({
   },
   contactRow: {
     marginBottom: SPACE.sm,
+  },
+  languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: TOUCH.standard,
+  },
+  languageRowText: {
+    fontSize: TYPE.body,
+    color: COLORS.text,
   },
   noteCard: {
     backgroundColor: COLORS.surface,

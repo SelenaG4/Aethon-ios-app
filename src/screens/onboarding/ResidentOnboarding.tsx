@@ -3,9 +3,10 @@ import { Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context'
 import notifee, { AuthorizationStatus } from '@notifee/react-native'
 import { Bell, Check } from 'lucide-react-native'
-import { AppText, Logo } from '../../components'
+import { AppText, LanguageButtons, Logo } from '../../components'
 import { EMERGENCY_NUMBER } from '../../constants/config'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
+import { TranslationKey, useTranslation } from '../../lib/i18n'
 import {
   setOnboardingComplete,
   setResidentWantsReminders,
@@ -24,20 +25,21 @@ type GoalDraft = {
   family_visible: boolean
 }
 
-const GOAL_PLACEHOLDERS = [
-  'Cook my own dinner',
-  'Get to the market on Thursdays',
-  'Look after my own tablets',
+const GOAL_PLACEHOLDER_KEYS: TranslationKey[] = [
+  'residentOnboarding.goalPlaceholder1',
+  'residentOnboarding.goalPlaceholder2',
+  'residentOnboarding.goalPlaceholder3',
 ]
 
-const EMPTY_GOAL_DRAFTS: GoalDraft[] = GOAL_PLACEHOLDERS.map(() => ({
+const EMPTY_GOAL_DRAFTS: GoalDraft[] = GOAL_PLACEHOLDER_KEYS.map(() => ({
   text: '',
   family_visible: false,
 }))
 
-const STEP_COUNT = 6
+const STEP_COUNT = 7
 
 export default function ResidentOnboarding({ resident, onComplete }: Props) {
+  const { t } = useTranslation()
   const [step, setStep] = useState(1)
   const [name, setName] = useState(resident.first_name)
   const [goalDrafts, setGoalDrafts] = useState<GoalDraft[]>(EMPTY_GOAL_DRAFTS)
@@ -83,7 +85,10 @@ export default function ResidentOnboarding({ resident, onComplete }: Props) {
     onComplete()
   }, [onComplete])
 
-  const isColoredStep = step === 1 || step === STEP_COUNT
+  // Step 1 (language) stays neutral/white — nothing has been chosen yet, so
+  // there's no "this is the language" colour to commit to. Welcome (now
+  // step 2) and Done (last step) are the two vibrant bookend steps.
+  const isColoredStep = step === 2 || step === STEP_COUNT
 
   return (
     <SafeAreaView
@@ -97,23 +102,24 @@ export default function ResidentOnboarding({ resident, onComplete }: Props) {
             onPress={goNext}
             style={styles.skipButton}
             accessibilityRole="button"
-            accessibilityLabel="Skip"
+            accessibilityLabel={t('residentOnboarding.skip')}
           >
             <AppText
               weight="semibold"
               style={[styles.skipText, isColoredStep && styles.skipTextInverted]}
             >
-              Skip
+              {t('residentOnboarding.skip')}
             </AppText>
           </Pressable>
         ) : null}
       </View>
 
-      {step === 1 ? <WelcomeStep onGetStarted={goNext} /> : null}
-      {step === 2 ? <NameStep name={name} onChangeName={setName} onSave={onSaveName} /> : null}
-      {step === 3 ? <RemindersStep onYes={onWantReminders} onNotNow={onNotNow} /> : null}
-      {step === 4 ? <ContactsStep resident={resident} onConfirm={goNext} /> : null}
-      {step === 5 ? (
+      {step === 1 ? <LanguageStep onSelect={goNext} /> : null}
+      {step === 2 ? <WelcomeStep onGetStarted={goNext} /> : null}
+      {step === 3 ? <NameStep name={name} onChangeName={setName} onSave={onSaveName} /> : null}
+      {step === 4 ? <RemindersStep onYes={onWantReminders} onNotNow={onNotNow} /> : null}
+      {step === 5 ? <ContactsStep resident={resident} onConfirm={goNext} /> : null}
+      {step === 6 ? (
         <GoalsStep goals={goalDrafts} onChangeGoals={setGoalDrafts} onSave={onSaveGoals} />
       ) : null}
       {step === STEP_COUNT ? <DoneStep onOpen={onFinish} /> : null}
@@ -139,24 +145,36 @@ function ProgressDots({ step, inverted }: { step: number; inverted: boolean }) {
   )
 }
 
+function LanguageStep({ onSelect }: { onSelect: () => void }) {
+  return (
+    <View style={styles.centeredStep}>
+      <Logo size={90} />
+      <View style={styles.languageGridWrap}>
+        <LanguageButtons onSelect={onSelect} />
+      </View>
+    </View>
+  )
+}
+
 function WelcomeStep({ onGetStarted }: { onGetStarted: () => void }) {
+  const { t } = useTranslation()
   return (
     <View style={styles.centeredStep}>
       <Logo size={110} />
       <AppText weight="black" style={styles.welcomeTitle}>
-        AETHON
+        {t('residentOnboarding.welcomeTitle')}
       </AppText>
       <AppText weight="semibold" style={styles.welcomeSubtitle}>
-        Welcome
+        {t('residentOnboarding.welcomeSubtitle')}
       </AppText>
       <Pressable
         style={styles.lightButton}
         onPress={onGetStarted}
         accessibilityRole="button"
-        accessibilityLabel="Get started"
+        accessibilityLabel={t('residentOnboarding.getStarted')}
       >
         <AppText weight="bold" style={styles.lightButtonText}>
-          Get started
+          {t('residentOnboarding.getStarted')}
         </AppText>
       </Pressable>
     </View>
@@ -172,27 +190,28 @@ function NameStep({
   onChangeName: (value: string) => void
   onSave: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <View style={styles.centeredStep}>
       <AppText weight="bold" style={styles.stepTitle}>
-        What is your name?
+        {t('residentOnboarding.nameQuestion')}
       </AppText>
       <TextInput
         style={styles.nameInput}
         value={name}
         onChangeText={onChangeName}
         textAlign="center"
-        placeholder="Your name"
-        placeholderTextColor={COLORS.textMuted}
+        placeholder={t('residentOnboarding.namePlaceholder')}
+        placeholderTextColor={COLORS.textSecond}
       />
       <Pressable
         style={styles.primaryButton}
         onPress={onSave}
         accessibilityRole="button"
-        accessibilityLabel="That is my name"
+        accessibilityLabel={t('residentOnboarding.thatIsMyName')}
       >
         <AppText weight="bold" style={styles.primaryButtonText}>
-          That is my name
+          {t('residentOnboarding.thatIsMyName')}
         </AppText>
       </Pressable>
     </View>
@@ -200,31 +219,32 @@ function NameStep({
 }
 
 function RemindersStep({ onYes, onNotNow }: { onYes: () => void; onNotNow: () => void }) {
+  const { t } = useTranslation()
   return (
     <View style={styles.centeredStep}>
       <Bell size={76} color={COLORS.primary} />
       <AppText weight="bold" style={[styles.stepTitle, styles.reminderSpacing]}>
-        Shall we remind you about your medication?
+        {t('residentOnboarding.remindersQuestion')}
       </AppText>
-      <AppText style={styles.stepBody}>A gentle reminder at the right time each day.</AppText>
+      <AppText style={styles.stepBody}>{t('residentOnboarding.remindersBody')}</AppText>
       <Pressable
         style={styles.primaryButton}
         onPress={onYes}
         accessibilityRole="button"
-        accessibilityLabel="Yes, remind me"
+        accessibilityLabel={t('residentOnboarding.yesRemindMe')}
       >
         <AppText weight="bold" style={styles.primaryButtonText}>
-          Yes, remind me
+          {t('residentOnboarding.yesRemindMe')}
         </AppText>
       </Pressable>
       <Pressable
         style={styles.outlinedButton}
         onPress={onNotNow}
         accessibilityRole="button"
-        accessibilityLabel="Not now"
+        accessibilityLabel={t('residentOnboarding.notNow')}
       >
         <AppText weight="bold" style={styles.outlinedButtonText}>
-          Not now
+          {t('residentOnboarding.notNow')}
         </AppText>
       </Pressable>
     </View>
@@ -232,12 +252,13 @@ function RemindersStep({ onYes, onNotNow }: { onYes: () => void; onNotNow: () =>
 }
 
 function ContactsStep({ resident, onConfirm }: { resident: Resident; onConfirm: () => void }) {
+  const { t } = useTranslation()
   const contacts = [...resident.emergency_contacts].sort((a, b) => a.priority - b.priority)
 
   return (
     <ScrollView contentContainerStyle={styles.scrollStep} keyboardShouldPersistTaps="handled">
       <AppText weight="bold" style={styles.stepTitleLeft}>
-        Who should we contact if you need help?
+        {t('residentOnboarding.contactsQuestion')}
       </AppText>
       {contacts.map((contact) => (
         <View key={contact.name} style={styles.contactCard}>
@@ -248,18 +269,18 @@ function ContactsStep({ resident, onConfirm }: { resident: Resident; onConfirm: 
           <AppText style={styles.contactDetail}>{contact.phone}</AppText>
         </View>
       ))}
-      <AppText style={styles.stepBodyLeft}>If you use the assistance button, we contact them.</AppText>
+      <AppText style={styles.stepBodyLeft}>{t('residentOnboarding.contactsBody')}</AppText>
       <AppText style={styles.smallPrint}>
-        This is not an emergency service. In a medical emergency call {EMERGENCY_NUMBER}.
+        {t('residentOnboarding.emergencyDisclaimer', { number: EMERGENCY_NUMBER })}
       </AppText>
       <Pressable
         style={styles.primaryButton}
         onPress={onConfirm}
         accessibilityRole="button"
-        accessibilityLabel="These are correct"
+        accessibilityLabel={t('residentOnboarding.theseAreCorrect')}
       >
         <AppText weight="bold" style={styles.primaryButtonText}>
-          These are correct
+          {t('residentOnboarding.theseAreCorrect')}
         </AppText>
       </Pressable>
     </ScrollView>
@@ -275,6 +296,8 @@ function GoalsStep({
   onChangeGoals: (goals: GoalDraft[]) => void
   onSave: () => void
 }) {
+  const { t } = useTranslation()
+
   const updateText = (index: number, text: string) => {
     onChangeGoals(goals.map((g, i) => (i === index ? { ...g, text } : g)))
   }
@@ -286,26 +309,26 @@ function GoalsStep({
   return (
     <ScrollView contentContainerStyle={styles.scrollStep} keyboardShouldPersistTaps="handled">
       <AppText weight="bold" style={styles.stepTitleLeft}>
-        What do you want to keep doing yourself?
+        {t('residentOnboarding.goalsQuestion')}
       </AppText>
-      <AppText style={styles.stepBodyLeft}>There are no wrong answers.</AppText>
-      {GOAL_PLACEHOLDERS.map((placeholder, index) => (
-        <View key={placeholder} style={styles.goalGroup}>
+      <AppText style={styles.stepBodyLeft}>{t('residentOnboarding.goalsBody')}</AppText>
+      {GOAL_PLACEHOLDER_KEYS.map((placeholderKey, index) => (
+        <View key={placeholderKey} style={styles.goalGroup}>
           <TextInput
             style={styles.goalInput}
             value={goals[index].text}
             onChangeText={(text) => updateText(index, text)}
-            placeholder={placeholder}
-            placeholderTextColor={COLORS.textMuted}
+            placeholder={t(placeholderKey)}
+            placeholderTextColor={COLORS.textSecond}
           />
           <Pressable
             style={styles.goalToggleRow}
             onPress={() => toggleVisible(index)}
             accessibilityRole="switch"
             accessibilityState={{ checked: goals[index].family_visible }}
-            accessibilityLabel="My family can see this"
+            accessibilityLabel={t('residentOnboarding.familyCanSee')}
           >
-            <AppText style={styles.goalToggleLabel}>My family can see this</AppText>
+            <AppText style={styles.goalToggleLabel}>{t('residentOnboarding.familyCanSee')}</AppText>
             <View pointerEvents="none">
               <Switch
                 value={goals[index].family_visible}
@@ -320,10 +343,10 @@ function GoalsStep({
         style={styles.primaryButton}
         onPress={onSave}
         accessibilityRole="button"
-        accessibilityLabel="Save"
+        accessibilityLabel={t('common.save')}
       >
         <AppText weight="bold" style={styles.primaryButtonText}>
-          Save
+          {t('common.save')}
         </AppText>
       </Pressable>
     </ScrollView>
@@ -331,22 +354,23 @@ function GoalsStep({
 }
 
 function DoneStep({ onOpen }: { onOpen: () => void }) {
+  const { t } = useTranslation()
   return (
     <View style={styles.centeredStep}>
       <View style={styles.doneCircle}>
         <Check size={56} color={COLORS.primary} />
       </View>
       <AppText weight="black" style={styles.doneTitle}>
-        Aethon is ready
+        {t('residentOnboarding.doneTitle')}
       </AppText>
       <Pressable
         style={styles.lightButton}
         onPress={onOpen}
         accessibilityRole="button"
-        accessibilityLabel="Open Aethon"
+        accessibilityLabel={t('residentOnboarding.openAethon')}
       >
         <AppText weight="bold" style={styles.lightButtonText}>
-          Open Aethon
+          {t('residentOnboarding.openAethon')}
         </AppText>
       </Pressable>
     </View>
@@ -386,6 +410,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.primary,
   },
   skipTextInverted: {
@@ -397,6 +422,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: SPACE.xl,
   },
+  languageGridWrap: {
+    width: '100%',
+    marginTop: SPACE.xl,
+  },
   scrollStep: {
     flexGrow: 1,
     paddingHorizontal: SPACE.xl,
@@ -406,38 +435,45 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     marginTop: SPACE.lg,
     fontSize: 46,
+    lineHeight: 64,
     color: COLORS.surface,
     letterSpacing: 1,
   },
   welcomeSubtitle: {
     marginTop: SPACE.sm,
     fontSize: 26,
+    lineHeight: 36,
     color: COLORS.surface,
     marginBottom: SPACE.xl,
   },
   stepTitle: {
     fontSize: 28,
+    lineHeight: 39,
     color: COLORS.text,
     textAlign: 'center',
     marginBottom: SPACE.xl,
   },
   stepTitleLeft: {
     fontSize: 26,
+    lineHeight: 36,
     color: COLORS.text,
     marginBottom: SPACE.lg,
   },
   reminderSpacing: {
     marginTop: SPACE.lg,
     fontSize: 26,
+    lineHeight: 36,
   },
   stepBody: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.textSecond,
     textAlign: 'center',
     marginBottom: SPACE.xl,
   },
   stepBodyLeft: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.textSecond,
     marginTop: SPACE.md,
   },
@@ -445,12 +481,13 @@ const styles = StyleSheet.create({
     marginTop: SPACE.md,
     marginBottom: SPACE.xl,
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
     fontStyle: 'italic',
   },
   nameInput: {
     width: '100%',
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     fontSize: 28,
     color: COLORS.text,
     borderWidth: 2,
@@ -466,11 +503,13 @@ const styles = StyleSheet.create({
   },
   contactName: {
     fontSize: 24,
+    lineHeight: 34,
     color: COLORS.text,
     marginBottom: 4,
   },
   contactDetail: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.textSecond,
     marginTop: 2,
   },
@@ -480,7 +519,7 @@ const styles = StyleSheet.create({
   },
   goalInput: {
     width: '100%',
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     fontSize: TYPE.residentMin,
     color: COLORS.text,
     borderWidth: 1.5,
@@ -495,49 +534,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
   goalToggleLabel: {
+    flexShrink: 1,
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.textSecond,
   },
   lightButton: {
     width: '100%',
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: SPACE.sm,
   },
   lightButtonText: {
     fontSize: TYPE.residentBody,
+    lineHeight: 31,
     color: COLORS.primary,
+    textAlign: 'center',
   },
   primaryButton: {
     width: '100%',
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: SPACE.sm,
+    paddingVertical: SPACE.sm,
   },
   primaryButtonText: {
     fontSize: TYPE.residentBody,
+    lineHeight: 31,
     color: COLORS.surface,
+    textAlign: 'center',
   },
   outlinedButton: {
     width: '100%',
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     borderRadius: RADIUS.lg,
     borderWidth: 2,
     borderColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: SPACE.md,
+    paddingVertical: SPACE.sm,
   },
   outlinedButtonText: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.primary,
+    textAlign: 'center',
   },
   doneCircle: {
     width: 110,
@@ -550,6 +601,7 @@ const styles = StyleSheet.create({
   },
   doneTitle: {
     fontSize: 32,
+    lineHeight: 45,
     color: COLORS.surface,
     textAlign: 'center',
     marginBottom: SPACE.xl,

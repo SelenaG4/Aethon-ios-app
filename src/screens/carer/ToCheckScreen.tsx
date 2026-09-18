@@ -12,21 +12,12 @@ import {
   subscribe,
   UnreviewedVisitNoteEntry,
 } from '../../lib/data'
+import { formatShortDateTime, useTranslation } from '../../lib/i18n'
 import type { CarerStackParamList } from '../../navigation/CarerNavigator'
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-function pad2(value: number): string {
-  return value < 10 ? `0${value}` : `${value}`
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-}
 
 export default function ToCheckScreen() {
   const navigation = useNavigation<NavigationProp<CarerStackParamList>>()
+  const { t } = useTranslation()
   const [noteEntries, setNoteEntries] = useState<UnreviewedVisitNoteEntry[]>([])
   const [escalationEntries, setEscalationEntries] = useState<EscalationAwaitingOutcomeEntry[]>([])
   const [loadState, setLoadState] = useState<'loading' | 'loaded' | 'error'>('loading')
@@ -65,13 +56,13 @@ export default function ToCheckScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <ScreenHeader title="To check" subtitle="Notes and escalations waiting on you" />
+        <ScreenHeader title={t('toCheck.title')} subtitle={t('toCheck.subtitle')} />
       </View>
 
       {loadState === 'loading' ? (
         <LoadingView />
       ) : loadState === 'error' ? (
-        <ErrorView message="Could not load your to-check list" onRetry={load} />
+        <ErrorView message={t('toCheck.loadError')} onRetry={load} />
       ) : (
         <ScrollView
           contentContainerStyle={styles.listContent}
@@ -80,13 +71,13 @@ export default function ToCheckScreen() {
           }
         >
           {isEmpty ? (
-            <EmptyView icon={CircleCheck} message="Nothing to check" />
+            <EmptyView icon={CircleCheck} message={t('toCheck.nothingToCheck')} />
           ) : (
             <>
               {escalationEntries.length > 0 ? (
                 <>
                   <AppText weight="bold" style={styles.sectionLabel}>
-                    Escalations awaiting outcome
+                    {t('toCheck.escalationsAwaitingOutcome')}
                   </AppText>
                   {escalationEntries.map((entry) => (
                     <EscalationToCheckRow
@@ -107,7 +98,7 @@ export default function ToCheckScreen() {
               {noteEntries.length > 0 ? (
                 <>
                   <AppText weight="bold" style={[styles.sectionLabel, styles.sectionSpacing]}>
-                    Notes waiting to be checked
+                    {t('toCheck.notesWaiting')}
                   </AppText>
                   {noteEntries.map((entry) => (
                     <NoteToCheckRow
@@ -133,6 +124,7 @@ function EscalationToCheckRow({
   entry: EscalationAwaitingOutcomeEntry
   onPress: () => void
 }) {
+  const { language } = useTranslation()
   const { escalation, residentName } = entry
   return (
     <Card style={[styles.row, styles.rowSpacing]} onPress={onPress}>
@@ -140,7 +132,7 @@ function EscalationToCheckRow({
         <AppText weight="bold" style={styles.rowName}>
           {residentName}
         </AppText>
-        <AppText style={styles.rowMeta}>{formatDateTime(escalation.created_at)}</AppText>
+        <AppText style={styles.rowMeta}>{formatShortDateTime(escalation.created_at, language)}</AppText>
       </View>
       <AppText style={styles.rowTranscript} numberOfLines={2}>
         {escalation.reason}
@@ -150,6 +142,7 @@ function EscalationToCheckRow({
 }
 
 function NoteToCheckRow({ entry, onPress }: { entry: UnreviewedVisitNoteEntry; onPress: () => void }) {
+  const { t, language } = useTranslation()
   const { note, residentName } = entry
   const isFailed = note.transcription_status === 'failed'
 
@@ -159,16 +152,16 @@ function NoteToCheckRow({ entry, onPress }: { entry: UnreviewedVisitNoteEntry; o
         <AppText weight="bold" style={styles.rowName}>
           {residentName}
         </AppText>
-        <AppText style={styles.rowMeta}>{formatDateTime(note.created_at)}</AppText>
+        <AppText style={styles.rowMeta}>{formatShortDateTime(note.created_at, language)}</AppText>
       </View>
       {isFailed ? (
-        <AppText style={styles.rowFailed}>Transcription unavailable. Tap to type the note.</AppText>
+        <AppText style={styles.rowFailed}>{t('toCheck.transcriptionUnavailable')}</AppText>
       ) : (
         <>
           <View style={styles.needsCheckingRow}>
             <View style={styles.amberDot} />
             <AppText weight="semibold" style={styles.needsCheckingText}>
-              Needs checking
+              {t('toCheck.needsChecking')}
             </AppText>
           </View>
           <AppText style={styles.rowTranscript} numberOfLines={2}>

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AppText, ErrorView, LoadingView, Logo } from '../components'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE, WEIGHT } from '../constants/theme'
+import { useTranslation } from '../lib/i18n'
 import { getFirstResident, getOnboardingComplete, getViewChoice, setViewChoice, ViewChoice } from '../lib/data'
 import type { Resident } from '../lib/mockData'
 import { FamilyPortalScreen, StyleGuideScreen } from '../screens/shared'
@@ -13,6 +14,7 @@ import ResidentNavigator from './ResidentNavigator'
 // There is no sign-in yet. This screen stands in for auth: the person picks
 // which view they are, and that choice is remembered for next launch.
 export default function RootNavigator() {
+  const { t } = useTranslation()
   const [view, setView] = useState<ViewChoice | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -54,7 +56,7 @@ export default function RootNavigator() {
   if (loadError) {
     return (
       <View style={styles.loadingContainer}>
-        <ErrorView message="Could not load Aethon" onRetry={load} />
+        <ErrorView message={t('chooser.loadError')} onRetry={load} />
       </View>
     )
   }
@@ -109,47 +111,48 @@ function ChooserScreen({
   onOpenStyleGuide: () => void
   onOpenFamilyPortal: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
         <View style={styles.brandRow}>
           <Logo size={32} />
           <AppText weight="bold" style={styles.brandText}>
-            Aethon
+            {t('chooser.brand')}
           </AppText>
         </View>
-        <Text style={styles.title}>Choose a view</Text>
+        <Text style={styles.title}>{t('chooser.title')}</Text>
         <Pressable
           style={[styles.choiceButton, styles.carerButton]}
           onPress={() => onChoose('carer')}
           accessibilityRole="button"
-          accessibilityLabel="Carer"
+          accessibilityLabel={t('chooser.carer')}
         >
-          <Text style={styles.choiceButtonText}>Carer</Text>
+          <Text style={styles.choiceButtonText}>{t('chooser.carer')}</Text>
         </Pressable>
         <Pressable
           style={[styles.choiceButton, styles.residentButton]}
           onPress={() => onChoose('resident')}
           accessibilityRole="button"
-          accessibilityLabel="Resident"
+          accessibilityLabel={t('chooser.resident')}
         >
-          <Text style={styles.choiceButtonText}>Resident</Text>
+          <Text style={styles.choiceButtonText}>{t('chooser.resident')}</Text>
         </Pressable>
         <Pressable
           style={styles.familyPortalLink}
           onPress={onOpenFamilyPortal}
           accessibilityRole="button"
-          accessibilityLabel="Family or management"
+          accessibilityLabel={t('chooser.familyOrManagement')}
         >
-          <Text style={styles.familyPortalLinkText}>Family or management</Text>
+          <Text style={styles.familyPortalLinkText}>{t('chooser.familyOrManagement')}</Text>
         </Pressable>
         <Pressable
           style={styles.styleGuideButton}
           onPress={onOpenStyleGuide}
           accessibilityRole="button"
-          accessibilityLabel="Style guide"
+          accessibilityLabel={t('chooser.styleGuide')}
         >
-          <Text style={styles.styleGuideButtonText}>Style guide</Text>
+          <Text style={styles.styleGuideButtonText}>{t('chooser.styleGuide')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

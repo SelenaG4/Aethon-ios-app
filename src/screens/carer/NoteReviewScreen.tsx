@@ -11,50 +11,28 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { ArrowLeft, Check, ChevronDown, ChevronUp } from 'lucide-react-native'
 import { AppText, ErrorView, LoadingView } from '../../components'
-import { COLORS, SPACE, TOUCH } from '../../constants/theme'
+import { COLORS, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import { confirmVisitNote, getResident, getVisitNote } from '../../lib/data'
+import { formatShortDateTime, TASK_OPTIONS, TranslationKey, useTranslation, VISIT_TYPE_OPTIONS } from '../../lib/i18n'
 import type { VisitNote } from '../../lib/mockData'
 import type { CarerStackParamList } from '../../navigation/CarerNavigator'
 
 type NoteReviewRoute = RouteProp<CarerStackParamList, 'NoteReview'>
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-// Every field here is optional and appears after the spoken note — a
-// required field ahead of the recording would slow down the one action
-// that must stay fast (docs/BUILD_GUIDE.txt, 5.4).
-const VISIT_TYPE_OPTIONS = ['Medication', 'Personal care', 'Social visit', 'Health check']
-
-const TASK_LABELS = [
-  'Medication administered',
-  'Meal supported',
-  'Mobility assisted',
-  'Personal care assisted',
-  'Fluids encouraged',
-]
-
 // Worded as a reminder to ask, never as a statement about the person — see
 // docs/BUILD_GUIDE.txt (6.3).
 type PromptKey = 'hearing' | 'vision' | 'continence'
 
-const PROMPT_ITEMS: { key: PromptKey; label: string }[] = [
-  { key: 'hearing', label: 'Ask about hearing' },
-  { key: 'vision', label: 'Ask about vision' },
-  { key: 'continence', label: 'Ask about continence' },
+const PROMPT_ITEMS: { key: PromptKey; labelKey: TranslationKey }[] = [
+  { key: 'hearing', labelKey: 'noteReview.askAboutHearing' },
+  { key: 'vision', labelKey: 'noteReview.askAboutVision' },
+  { key: 'continence', labelKey: 'noteReview.askAboutContinence' },
 ]
-
-function pad2(value: number): string {
-  return value < 10 ? `0${value}` : `${value}`
-}
-
-function formatRecordedAt(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
-}
 
 export default function NoteReviewScreen() {
   const navigation = useNavigation<NavigationProp<CarerStackParamList>>()
   const route = useRoute<NoteReviewRoute>()
+  const { t, language } = useTranslation()
   const { noteId } = route.params
 
   const [note, setNote] = useState<VisitNote | null>(null)
@@ -112,7 +90,9 @@ export default function NoteReviewScreen() {
 
   const onConfirm = useCallback(async () => {
     setIsSaving(true)
-    const tasksCompleted = TASK_LABELS.filter((label) => checkedTasks[label]).join(', ')
+    const tasksCompleted = TASK_OPTIONS.filter((option) => checkedTasks[option.value])
+      .map((option) => option.value)
+      .join(', ')
     await confirmVisitNote(noteId, text, {
       visitType,
       tasksCompleted,
@@ -131,7 +111,7 @@ export default function NoteReviewScreen() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel={t('common.back')}
         >
           <ArrowLeft size={22} color={COLORS.text} />
         </Pressable>
@@ -140,7 +120,7 @@ export default function NoteReviewScreen() {
             {clientName}
           </AppText>
           {note ? (
-            <AppText style={styles.headerSubtitle}>{formatRecordedAt(note.created_at)}</AppText>
+            <AppText style={styles.headerSubtitle}>{formatShortDateTime(note.created_at, language)}</AppText>
           ) : null}
         </View>
       </View>
@@ -151,14 +131,14 @@ export default function NoteReviewScreen() {
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
         >
-          <AppText style={styles.reviewLabel}>Check and correct if needed</AppText>
+          <AppText style={styles.reviewLabel}>{t('noteReview.reviewLabel')}</AppText>
           <TextInput
             style={styles.transcriptInput}
             value={text}
             onChangeText={setText}
             multiline
             textAlignVertical="top"
-            placeholder="Type the note"
+            placeholder={t('noteReview.transcriptPlaceholder')}
             placeholderTextColor={COLORS.textMuted}
           />
 
@@ -166,10 +146,10 @@ export default function NoteReviewScreen() {
             onPress={toggleDetail}
             style={styles.detailToggle}
             accessibilityRole="button"
-            accessibilityLabel="Add detail, optional"
+            accessibilityLabel={t('noteReview.addDetail')}
           >
             <AppText weight="bold" style={styles.detailToggleText}>
-              Add detail (optional)
+              {t('noteReview.addDetail')}
             </AppText>
             {isDetailExpanded ? (
               <ChevronUp size={20} color={COLORS.text} />
@@ -181,18 +161,18 @@ export default function NoteReviewScreen() {
           {isDetailExpanded ? (
             <View style={styles.detailSection}>
               <AppText weight="bold" style={styles.detailSectionLabel}>
-                Visit type
+                {t('noteReview.visitType')}
               </AppText>
               <View style={styles.visitTypeGrid}>
                 {VISIT_TYPE_OPTIONS.map((option) => {
-                  const selected = visitType === option
+                  const selected = visitType === option.value
                   return (
                     <Pressable
-                      key={option}
-                      onPress={() => onSelectVisitType(option)}
+                      key={option.value}
+                      onPress={() => onSelectVisitType(option.value)}
                       style={[styles.visitTypeButton, selected && styles.visitTypeButtonSelected]}
                       accessibilityRole="button"
-                      accessibilityLabel={option}
+                      accessibilityLabel={t(option.labelKey)}
                       accessibilityState={{ selected }}
                     >
                       <AppText
@@ -202,7 +182,7 @@ export default function NoteReviewScreen() {
                           selected && styles.visitTypeButtonTextSelected,
                         ]}
                       >
-                        {option}
+                        {t(option.labelKey)}
                       </AppText>
                     </Pressable>
                   )
@@ -210,28 +190,25 @@ export default function NoteReviewScreen() {
               </View>
 
               <AppText weight="bold" style={styles.detailSectionLabel}>
-                Tasks
+                {t('noteReview.tasks')}
               </AppText>
-              {TASK_LABELS.map((label) => (
+              {TASK_OPTIONS.map((option) => (
                 <CheckboxRow
-                  key={label}
-                  label={label}
-                  checked={!!checkedTasks[label]}
-                  onPress={() => onToggleTask(label)}
+                  key={option.value}
+                  label={t(option.labelKey)}
+                  checked={!!checkedTasks[option.value]}
+                  onPress={() => onToggleTask(option.value)}
                 />
               ))}
 
               <AppText weight="bold" style={styles.detailSectionLabel}>
-                Worth asking about next visit
+                {t('noteReview.worthAsking')}
               </AppText>
-              <AppText style={styles.promptCaption}>
-                Not an assessment. These are common, usually treatable, and rarely raised by the
-                person themselves.
-              </AppText>
+              <AppText style={styles.promptCaption}>{t('noteReview.worthAskingCaption')}</AppText>
               {PROMPT_ITEMS.map((item) => (
                 <CheckboxRow
                   key={item.key}
-                  label={item.label}
+                  label={t(item.labelKey)}
                   checked={prompts[item.key]}
                   onPress={() => onTogglePrompt(item.key)}
                 />
@@ -244,15 +221,15 @@ export default function NoteReviewScreen() {
             onPress={onConfirm}
             disabled={isSaving}
             accessibilityRole="button"
-            accessibilityLabel="Confirm note"
+            accessibilityLabel={t('noteReview.confirmNote')}
           >
             <AppText weight="bold" style={styles.confirmButtonText}>
-              {isSaving ? 'Saving…' : 'Confirm note'}
+              {isSaving ? t('common.saving') : t('noteReview.confirmNote')}
             </AppText>
           </Pressable>
         </ScrollView>
       ) : loadError ? (
-        <ErrorView message="Could not load this note" onRetry={load} />
+        <ErrorView message={t('noteReview.loadError')} onRetry={load} />
       ) : (
         <LoadingView />
       )}
@@ -312,7 +289,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     marginTop: 2,
-    fontSize: 14,
+    fontSize: TYPE.small,
     color: COLORS.textMuted,
   },
   content: {
@@ -323,7 +300,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACE.xl,
   },
   reviewLabel: {
-    fontSize: 14,
+    fontSize: TYPE.small,
     color: COLORS.textMuted,
     marginBottom: SPACE.sm,
   },
@@ -359,7 +336,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACE.sm,
   },
   promptCaption: {
-    fontSize: 13,
+    fontSize: TYPE.small,
     color: COLORS.textMuted,
     marginBottom: SPACE.sm,
   },

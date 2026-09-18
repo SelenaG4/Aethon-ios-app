@@ -7,6 +7,7 @@ import { ClipboardCheck, FileText, User, Users } from 'lucide-react-native'
 import { AppText, Badge } from '../components'
 import { COLORS, TYPE } from '../constants/theme'
 import { getUnreviewedVisitNotesCount, subscribe } from '../lib/data'
+import { useTranslation } from '../lib/i18n'
 import { initTranscription } from '../lib/transcription'
 import {
   BaselineScreen,
@@ -77,24 +78,20 @@ const styles = StyleSheet.create({
   },
 })
 
-function renderLabel(text: string) {
-  return ({ color }: { color: string }) => (
+function TabLabel({ color, text }: { color: string; text: string }) {
+  return (
     <AppText weight="bold" style={[styles.label, { color }]}>
       {text}
     </AppText>
   )
 }
 
-const renderClientsLabel = renderLabel('Clients')
-const renderToCheckLabel = renderLabel('To check')
-const renderHandoverLabel = renderLabel('Handover')
-const renderProfileLabel = renderLabel('Profile')
-
 const renderClientsIcon = ({ color, size }: IconProps) => <Users color={color} size={size} />
 const renderHandoverIcon = ({ color, size }: IconProps) => <FileText color={color} size={size} />
 const renderProfileIcon = ({ color, size }: IconProps) => <User color={color} size={size} />
 
 function CarerTabs({ onSwitchView }: Props) {
+  const { t } = useTranslation()
   const [unreviewedCount, setUnreviewedCount] = useState(0)
 
   useEffect(() => {
@@ -120,6 +117,23 @@ function CarerTabs({ onSwitchView }: Props) {
       </View>
     ),
     [unreviewedCount]
+  )
+
+  const renderClientsLabel = useCallback(
+    ({ color }: { color: string }) => <TabLabel color={color} text={t('carerTabs.clients')} />,
+    [t]
+  )
+  const renderToCheckLabel = useCallback(
+    ({ color }: { color: string }) => <TabLabel color={color} text={t('carerTabs.toCheck')} />,
+    [t]
+  )
+  const renderHandoverLabel = useCallback(
+    ({ color }: { color: string }) => <TabLabel color={color} text={t('carerTabs.handover')} />,
+    [t]
+  )
+  const renderProfileLabel = useCallback(
+    ({ color }: { color: string }) => <TabLabel color={color} text={t('carerTabs.profile')} />,
+    [t]
   )
 
   return (

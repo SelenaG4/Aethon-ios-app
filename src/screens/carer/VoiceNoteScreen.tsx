@@ -8,6 +8,7 @@ import { ArrowLeft, Check, Mic, Square } from 'lucide-react-native'
 import { AppText } from '../../components'
 import { COLORS, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import { addVisitNote, completeVisitNoteTranscription, CURRENT_CARER } from '../../lib/data'
+import { useTranslation } from '../../lib/i18n'
 import { transcribe } from '../../lib/transcription'
 import type { CarerStackParamList } from '../../navigation/CarerNavigator'
 
@@ -43,6 +44,7 @@ function formatElapsed(seconds: number): string {
 export default function VoiceNoteScreen() {
   const navigation = useNavigation()
   const route = useRoute<VoiceNoteRoute>()
+  const { t } = useTranslation()
   const { clientId, clientName } = route.params
 
   const [state, setState] = useState<RecordingState>('idle')
@@ -132,9 +134,9 @@ export default function VoiceNoteScreen() {
         })
       }, 1000)
     } catch {
-      setError('Could not start recording')
+      setError(t('voiceNote.couldNotStart'))
     }
-  }, [finishRecording, pulse])
+  }, [finishRecording, pulse, t])
 
   const onCenterPress = useCallback(() => {
     if (state === 'idle') {
@@ -166,7 +168,7 @@ export default function VoiceNoteScreen() {
             onPress={onBack}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={t('common.back')}
           >
             <ArrowLeft size={22} color={COLORS.surface} />
           </Pressable>
@@ -174,7 +176,7 @@ export default function VoiceNoteScreen() {
         <AppText weight="bold" style={styles.headerTitle} numberOfLines={1}>
           {clientName}
         </AppText>
-        <AppText style={styles.headerSubtitle}>Transcribed on this device</AppText>
+        <AppText style={styles.headerSubtitle}>{t('voiceNote.transcribedOnDevice')}</AppText>
       </View>
 
       <View style={styles.centre}>
@@ -183,16 +185,16 @@ export default function VoiceNoteScreen() {
             <Pressable
               onPress={onCenterPress}
               accessibilityRole="button"
-              accessibilityLabel="Start recording"
+              accessibilityLabel={t('voiceNote.startRecording')}
             >
               <View style={styles.circleIdle}>
                 <Mic size={56} color={COLORS.surface} />
               </View>
             </Pressable>
             <AppText weight="semibold" style={styles.idleLabel}>
-              Tap to record
+              {t('voiceNote.tapToRecord')}
             </AppText>
-            <AppText style={styles.idleHint}>Speak normally. Up to two minutes.</AppText>
+            <AppText style={styles.idleHint}>{t('voiceNote.idleHint')}</AppText>
             {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
           </>
         ) : null}
@@ -202,7 +204,7 @@ export default function VoiceNoteScreen() {
             <Pressable
               onPress={onCenterPress}
               accessibilityRole="button"
-              accessibilityLabel="Stop recording"
+              accessibilityLabel={t('voiceNote.stopRecording')}
             >
               <Animated.View style={[styles.circleRecording, { transform: [{ scale: pulse }] }]}>
                 <Square size={48} color={COLORS.surface} />
@@ -211,7 +213,7 @@ export default function VoiceNoteScreen() {
             <AppText weight="bold" style={styles.elapsedText}>
               {formatElapsed(elapsedSeconds)}
             </AppText>
-            <AppText style={styles.recordingHint}>Tap to stop</AppText>
+            <AppText style={styles.recordingHint}>{t('voiceNote.tapToStop')}</AppText>
           </>
         ) : null}
 
@@ -221,7 +223,7 @@ export default function VoiceNoteScreen() {
               <Check size={48} color={COLORS.primaryDark} />
             </View>
             <AppText weight="bold" style={styles.savedText}>
-              Note saved
+              {t('voiceNote.noteSaved')}
             </AppText>
           </>
         ) : null}

@@ -17,23 +17,13 @@ import {
   subscribe,
 } from '../../lib/data'
 import { buildHandoverHtml, buildHandoverText } from '../../lib/handover'
+import { formatLongDate, formatTime, translateVisitType, useTranslation } from '../../lib/i18n'
 import type { Shift } from '../../lib/mockData'
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function pad2(value: number): string {
   return value < 10 ? `0${value}` : `${value}`
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 }
 
 function fileDateString(iso: string): string {
@@ -42,6 +32,7 @@ function fileDateString(iso: string): string {
 }
 
 export default function HandoverScreen() {
+  const { t, language } = useTranslation()
   const [shift, setShift] = useState<Shift | null>(null)
   const [boundaryIso, setBoundaryIso] = useState<string | null>(null)
   const [handoverData, setHandoverData] = useState<ShiftHandoverData | null>(null)
@@ -76,28 +67,36 @@ export default function HandoverScreen() {
 
   const onCopyText = useCallback(() => {
     if (!handoverData || !boundaryIso) return
-    const text = buildHandoverText({
-      carerName: CURRENT_CARER.name,
-      shiftStartIso: boundaryIso,
-      shiftEndIso: shift?.ended_at ?? null,
-      ...handoverData,
-    })
+    const text = buildHandoverText(
+      {
+        carerName: CURRENT_CARER.name,
+        shiftStartIso: boundaryIso,
+        shiftEndIso: shift?.ended_at ?? null,
+        ...handoverData,
+      },
+      t,
+      language
+    )
     Clipboard.setString(text)
     setIsCopied(true)
     setTimeout(() => setIsCopied(false), 2000)
-  }, [handoverData, boundaryIso, shift])
+  }, [handoverData, boundaryIso, shift, t, language])
 
   const onExportPdf = useCallback(async () => {
     if (!handoverData || !boundaryIso) return
     setExportError(null)
     setIsExportingPdf(true)
     try {
-      const html = buildHandoverHtml({
-        carerName: CURRENT_CARER.name,
-        shiftStartIso: boundaryIso,
-        shiftEndIso: shift?.ended_at ?? null,
-        ...handoverData,
-      })
+      const html = buildHandoverHtml(
+        {
+          carerName: CURRENT_CARER.name,
+          shiftStartIso: boundaryIso,
+          shiftEndIso: shift?.ended_at ?? null,
+          ...handoverData,
+        },
+        t,
+        language
+      )
       const pdf = await generatePDF({
         html,
         fileName: `Aethon_Handover_${fileDateString(boundaryIso)}`,
@@ -105,11 +104,11 @@ export default function HandoverScreen() {
       })
       await Share.open({ url: `file://${pdf.filePath}`, type: 'application/pdf' })
     } catch {
-      setExportError('Could not export PDF')
+      setExportError(t('handover.exportError'))
     } finally {
       setIsExportingPdf(false)
     }
-  }, [handoverData, boundaryIso, shift])
+  }, [handoverData, boundaryIso, shift, t, language])
 
   const onCloseShift = useCallback(async () => {
     if (!shift) return
@@ -119,7 +118,7 @@ export default function HandoverScreen() {
   if (loadState === 'error') {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ErrorView message="Could not load the handover" onRetry={load} />
+        <ErrorView message={t('handover.loadError')} onRetry={load} />
       </SafeAreaView>
     )
   }
@@ -134,17 +133,17 @@ export default function HandoverScreen() {
 
   const isActiveShift = shift !== null
   const shiftRangeLabel = isActiveShift
-    ? `${formatTime(boundaryIso)} – ongoing`
-    : `Last 12 hours, since ${formatTime(boundaryIso)}`
+    ? t('handover.rangeOngoing', { time: formatTime(boundaryIso) })
+    : t('handover.rangeLast12Hours', { time: formatTime(boundaryIso) })
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <AppText weight="black" style={styles.title}>
-          Shift handover
+          {t('handover.title')}
         </AppText>
         <AppText style={styles.metaText}>{CURRENT_CARER.name}</AppText>
-        <AppText style={styles.metaText}>{formatDate(boundaryIso)}</AppText>
+        <AppText style={styles.metaText}>{formatLongDate(boundaryIso, language)}</AppText>
         <AppText style={styles.metaText}>{shiftRangeLabel}</AppText>
 
         <View style={styles.summaryStrip}>
@@ -152,28 +151,28 @@ export default function HandoverScreen() {
             <AppText weight="black" style={styles.summaryValue}>
               {handoverData.clientsSeenCount}
             </AppText>
-            <AppText style={styles.summaryLabel}>Clients seen</AppText>
+            <AppText style={styles.summaryLabel}>{t('handover.clientsSeen')}</AppText>
           </View>
           <View style={styles.summaryBox}>
             <AppText weight="black" style={styles.summaryValue}>
               {handoverData.noteCount}
             </AppText>
-            <AppText style={styles.summaryLabel}>Notes recorded</AppText>
+            <AppText style={styles.summaryLabel}>{t('handover.notesRecorded')}</AppText>
           </View>
           <View style={styles.summaryBox}>
             <AppText weight="black" style={styles.summaryValue}>
               {handoverData.openEscalations.length}
             </AppText>
-            <AppText style={styles.summaryLabel}>Escalations open</AppText>
+            <AppText style={styles.summaryLabel}>{t('handover.escalationsOpen')}</AppText>
           </View>
         </View>
 
         {handoverData.notes.length === 0 ? (
-          <EmptyView icon={Inbox} message="No visits recorded this shift" />
+          <EmptyView icon={Inbox} message={t('handover.noVisitsRecorded')} />
         ) : (
           <>
             <AppText weight="bold" style={styles.sectionHeading}>
-              Clients seen
+              {t('handover.clientsSeen')}
             </AppText>
             {handoverData.notes.flatMap((entry) =>
               entry.notes.map((note) => (
@@ -182,14 +181,15 @@ export default function HandoverScreen() {
                     {entry.residentName}
                   </AppText>
                   <AppText style={styles.clientSeenMeta}>
-                    {note.visit_type ?? 'Visit'} · {formatTime(note.created_at)}
+                    {note.visit_type ? translateVisitType(note.visit_type, t) : t('handover.visitFallback')} ·{' '}
+                    {formatTime(note.created_at)}
                   </AppText>
                 </View>
               ))
             )}
 
             <AppText weight="bold" style={[styles.sectionHeading, styles.sectionSpacing]}>
-              Notes
+              {t('handover.notes')}
             </AppText>
             {handoverData.notes.map((entry) => (
               <View key={entry.residentId} style={styles.notesGroup}>
@@ -214,7 +214,7 @@ export default function HandoverScreen() {
         {handoverData.openEscalations.length > 0 ? (
           <>
             <AppText weight="bold" style={[styles.sectionHeading, styles.sectionSpacing]}>
-              Open escalations
+              {t('handover.openEscalations')}
             </AppText>
             {handoverData.openEscalations.map((entry) => (
               <View key={entry.escalation.id} style={styles.escalationCard}>
@@ -227,7 +227,7 @@ export default function HandoverScreen() {
           </>
         ) : null}
 
-        <AppText style={styles.footer}>Care coordination summary. Not an official medical record.</AppText>
+        <AppText style={styles.footer}>{t('handover.footer')}</AppText>
 
         {exportError ? <AppText style={styles.exportError}>{exportError}</AppText> : null}
 
@@ -235,10 +235,10 @@ export default function HandoverScreen() {
           style={styles.secondaryButton}
           onPress={onCopyText}
           accessibilityRole="button"
-          accessibilityLabel="Copy as text"
+          accessibilityLabel={t('handover.copyAsText')}
         >
           <AppText weight="bold" style={styles.secondaryButtonText}>
-            {isCopied ? 'Copied' : 'Copy as text'}
+            {isCopied ? t('handover.copied') : t('handover.copyAsText')}
           </AppText>
         </Pressable>
 
@@ -247,10 +247,10 @@ export default function HandoverScreen() {
           onPress={onExportPdf}
           disabled={isExportingPdf}
           accessibilityRole="button"
-          accessibilityLabel="Export PDF"
+          accessibilityLabel={t('handover.exportPdf')}
         >
           <AppText weight="bold" style={styles.primaryButtonText}>
-            {isExportingPdf ? 'Exporting…' : 'Export PDF'}
+            {isExportingPdf ? t('handover.exporting') : t('handover.exportPdf')}
           </AppText>
         </Pressable>
 
@@ -259,10 +259,10 @@ export default function HandoverScreen() {
             style={styles.closeShiftButton}
             onPress={onCloseShift}
             accessibilityRole="button"
-            accessibilityLabel="Close shift"
+            accessibilityLabel={t('handover.closeShift')}
           >
             <AppText weight="bold" style={styles.closeShiftButtonText}>
-              Close shift
+              {t('handover.closeShift')}
             </AppText>
           </Pressable>
         ) : null}

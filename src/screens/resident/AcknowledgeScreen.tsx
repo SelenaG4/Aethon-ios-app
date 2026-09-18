@@ -5,13 +5,17 @@ import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navig
 import { ArrowLeft, Check, X } from 'lucide-react-native'
 import { AppText, ErrorView, LoadingView } from '../../components'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
-import { acknowledgeMedication, getMedication, getResident } from '../../lib/data'
+import { acknowledgeMedication, getMedication, getResident, Language } from '../../lib/data'
+import { useTranslation } from '../../lib/i18n'
 import type { Medication } from '../../lib/mockData'
 import type { ResidentStackParamList } from '../../navigation/ResidentNavigator'
 
 type AcknowledgeRoute = RouteProp<ResidentStackParamList, 'Acknowledge'>
 
-function formatScheduledTime(time: string): string {
+// English uses 12-hour am/pm; German/French/Italian use the 24-hour clock
+// already stored in scheduled_time, so those languages need no conversion.
+function formatScheduledTime(time: string, language: Language): string {
+  if (language !== 'en') return time
   const [hourText, minuteText] = time.split(':')
   const hour = Number(hourText)
   const period = hour >= 12 ? 'pm' : 'am'
@@ -22,6 +26,7 @@ function formatScheduledTime(time: string): string {
 export default function AcknowledgeScreen() {
   const navigation = useNavigation<NavigationProp<ResidentStackParamList>>()
   const route = useRoute<AcknowledgeRoute>()
+  const { t, language } = useTranslation()
   const { medicationId } = route.params
   const [medication, setMedication] = useState<Medication | null>(null)
   const [residentName, setResidentName] = useState('Resident')
@@ -53,7 +58,7 @@ export default function AcknowledgeScreen() {
       if (!medication) return
       await acknowledgeMedication(medication.id, status, residentName)
       setRecordedStatus(status)
-      setTimeout(() => navigation.goBack(), 1500)
+      setTimeout(() => navigation.goBack(), 2500)
     },
     [medication, residentName, navigation]
   )
@@ -61,7 +66,7 @@ export default function AcknowledgeScreen() {
   if (loadError) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <ErrorView message="Could not load this medication" onRetry={load} isResident />
+        <ErrorView message={t('acknowledge.loadError')} onRetry={load} isResident />
       </SafeAreaView>
     )
   }
@@ -86,7 +91,7 @@ export default function AcknowledgeScreen() {
             )}
           </View>
           <AppText weight="bold" style={styles.recordedText}>
-            Recorded
+            {t('acknowledge.recorded')}
           </AppText>
         </View>
       </SafeAreaView>
@@ -99,7 +104,7 @@ export default function AcknowledgeScreen() {
         onPress={() => navigation.goBack()}
         style={styles.backButton}
         accessibilityRole="button"
-        accessibilityLabel="Back"
+        accessibilityLabel={t('common.back')}
       >
         <ArrowLeft size={28} color={COLORS.text} />
       </Pressable>
@@ -110,7 +115,7 @@ export default function AcknowledgeScreen() {
         </AppText>
         <AppText style={styles.dose}>{medication.dosage}</AppText>
         <AppText style={styles.scheduledFor}>
-          Scheduled for {formatScheduledTime(medication.scheduled_time)}
+          {t('acknowledge.scheduledFor', { time: formatScheduledTime(medication.scheduled_time, language) })}
         </AppText>
       </View>
 
@@ -119,22 +124,22 @@ export default function AcknowledgeScreen() {
           style={styles.tookItButton}
           onPress={() => onRecord('taken')}
           accessibilityRole="button"
-          accessibilityLabel="I took it"
+          accessibilityLabel={t('acknowledge.iTookIt')}
         >
           <Check size={40} color={COLORS.surface} />
           <AppText weight="bold" style={styles.tookItText}>
-            I took it
+            {t('acknowledge.iTookIt')}
           </AppText>
         </Pressable>
         <Pressable
           style={styles.skippedItButton}
           onPress={() => onRecord('skipped')}
           accessibilityRole="button"
-          accessibilityLabel="I skipped it"
+          accessibilityLabel={t('acknowledge.iSkippedIt')}
         >
           <X size={40} color={COLORS.textMuted} />
           <AppText weight="bold" style={styles.skippedItText}>
-            I skipped it
+            {t('acknowledge.iSkippedIt')}
           </AppText>
         </Pressable>
       </View>
@@ -162,18 +167,23 @@ const styles = StyleSheet.create({
   },
   drugName: {
     fontSize: 36,
+    lineHeight: 50,
     color: COLORS.primaryDark,
     textAlign: 'center',
   },
   dose: {
     marginTop: SPACE.sm,
     fontSize: 28,
+    lineHeight: 39,
     color: COLORS.textSecond,
+    textAlign: 'center',
   },
   scheduledFor: {
     marginTop: SPACE.md,
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
+    textAlign: 'center',
   },
   controlsRow: {
     flexDirection: 'row',
@@ -182,21 +192,25 @@ const styles = StyleSheet.create({
   },
   tookItButton: {
     flex: 1,
-    height: 110,
+    minHeight: 110,
     margin: SPACE.xs,
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACE.xs,
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.xs,
   },
   tookItText: {
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.surface,
+    textAlign: 'center',
   },
   skippedItButton: {
     flex: 1,
-    height: 110,
+    minHeight: 110,
     margin: SPACE.xs,
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.surfaceAlt,
@@ -205,15 +219,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACE.xs,
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.xs,
   },
   skippedItText: {
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
+    textAlign: 'center',
   },
   recordedCentered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: SPACE.xl,
   },
   recordedCircle: {
     width: 130,
@@ -228,6 +247,8 @@ const styles = StyleSheet.create({
   },
   recordedText: {
     fontSize: 30,
+    lineHeight: 42,
     color: COLORS.text,
+    textAlign: 'center',
   },
 })

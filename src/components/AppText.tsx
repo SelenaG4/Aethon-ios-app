@@ -20,11 +20,15 @@ const ANDROID_FONT_WEIGHT: Record<AppTextWeight, TextStyle['fontWeight']> = {
   black: '900',
 }
 
-export default function AppText({ weight = 'regular', style, ...rest }: Props) {
+// Dynamic Type is left on (RN's default) rather than disabled, but capped at
+// 1.6x so the largest accessibility text sizes grow content instead of
+// breaking layouts. Callers can still override by passing their own
+// maxFontSizeMultiplier.
+export default function AppText({ weight = 'regular', style, maxFontSizeMultiplier = 1.6, ...rest }: Props) {
   const fontStyle: TextStyle =
     Platform.OS === 'ios'
       ? { fontFamily: FONT[weight] }
       : { fontFamily: FONT[weight], fontWeight: ANDROID_FONT_WEIGHT[weight] }
 
-  return <Text {...rest} style={[fontStyle, style]} />
+  return <Text maxFontSizeMultiplier={maxFontSizeMultiplier} {...rest} style={[fontStyle, style]} />
 }

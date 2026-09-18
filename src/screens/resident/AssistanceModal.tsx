@@ -5,6 +5,7 @@ import { AppText } from '../../components'
 import { EMERGENCY_NUMBER } from '../../constants/config'
 import { COLORS, RADIUS, SPACE, TOUCH, TYPE } from '../../constants/theme'
 import { isNightHour, pickAssistanceContact, requestAssistance } from '../../lib/assistance'
+import { useTranslation } from '../../lib/i18n'
 import type { EmergencyContact } from '../../lib/mockData'
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 type Phase = 'confirm' | 'result'
 
 export default function AssistanceModal({ visible, residentId, contacts, onClose }: Props) {
+  const { t } = useTranslation()
   const [phase, setPhase] = useState<Phase>('confirm')
   const [resultMessage, setResultMessage] = useState('')
 
@@ -35,11 +37,11 @@ export default function AssistanceModal({ visible, residentId, contacts, onClose
     const outcome = await requestAssistance(residentId, contact)
     setResultMessage(
       outcome.delivered
-        ? `We have contacted ${outcome.contactName}.`
-        : `We could not reach ${outcome.contactName} through the app. Please telephone them, or call ${EMERGENCY_NUMBER} in an emergency.`
+        ? t('assistance.delivered', { name: outcome.contactName })
+        : t('assistance.notDelivered', { name: outcome.contactName, number: EMERGENCY_NUMBER })
     )
     setPhase('result')
-  }, [residentId, contact])
+  }, [residentId, contact, t])
 
   if (!contact) return null
 
@@ -51,33 +53,34 @@ export default function AssistanceModal({ visible, residentId, contacts, onClose
             <>
               <TriangleAlert size={56} color={COLORS.danger} />
               <AppText weight="bold" style={styles.title}>
-                Send a request for help?
+                {t('assistance.title')}
               </AppText>
               <AppText style={styles.contactLine}>
-                {night ? 'It is night time. ' : ''}
-                We will contact {contact.name} now.
+                {t(night ? 'assistance.contactLineNight' : 'assistance.contactLineDay', {
+                  name: contact.name,
+                })}
               </AppText>
               <AppText style={styles.smallPrint}>
-                This is not an emergency service. In a medical emergency call {EMERGENCY_NUMBER}.
+                {t('assistance.smallPrint', { number: EMERGENCY_NUMBER })}
               </AppText>
               <Pressable
                 style={styles.helpButton}
                 onPress={onConfirm}
                 accessibilityRole="button"
-                accessibilityLabel="Yes, I need help"
+                accessibilityLabel={t('assistance.yesINeedHelp')}
               >
                 <AppText weight="bold" style={styles.helpButtonText}>
-                  Yes, I need help
+                  {t('assistance.yesINeedHelp')}
                 </AppText>
               </Pressable>
               <Pressable
                 style={styles.fineButton}
                 onPress={onClose}
                 accessibilityRole="button"
-                accessibilityLabel="No, I am fine"
+                accessibilityLabel={t('assistance.noIAmFine')}
               >
                 <AppText weight="bold" style={styles.fineButtonText}>
-                  No, I am fine
+                  {t('assistance.noIAmFine')}
                 </AppText>
               </Pressable>
             </>
@@ -90,10 +93,10 @@ export default function AssistanceModal({ visible, residentId, contacts, onClose
                 style={styles.helpButton}
                 onPress={onClose}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('assistance.close')}
               >
                 <AppText weight="bold" style={styles.helpButtonText}>
-                  Close
+                  {t('assistance.close')}
                 </AppText>
               </Pressable>
             </>
@@ -121,51 +124,63 @@ const styles = StyleSheet.create({
   title: {
     marginTop: SPACE.md,
     fontSize: 28,
+    lineHeight: 39,
     color: COLORS.text,
     textAlign: 'center',
   },
   contactLine: {
     marginTop: SPACE.md,
     fontSize: TYPE.residentMin,
+    lineHeight: 31,
     color: COLORS.textSecond,
     textAlign: 'center',
   },
   smallPrint: {
     marginTop: SPACE.md,
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
     fontStyle: 'italic',
     textAlign: 'center',
   },
   helpButton: {
     width: '100%',
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     marginTop: SPACE.lg,
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.danger,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.md,
   },
   helpButtonText: {
     fontSize: 24,
+    lineHeight: 34,
     color: COLORS.surface,
+    textAlign: 'center',
   },
   fineButton: {
     width: '100%',
-    height: TOUCH.resident,
+    minHeight: TOUCH.resident,
     marginTop: SPACE.md,
     borderRadius: RADIUS.lg,
     borderWidth: 2,
     borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.md,
   },
   fineButtonText: {
     fontSize: TYPE.residentMin,
-    color: COLORS.textMuted,
+    lineHeight: 31,
+    color: COLORS.textSecond,
+    textAlign: 'center',
   },
   resultText: {
     fontSize: 24,
+    lineHeight: 34,
     color: COLORS.text,
     textAlign: 'center',
   },
