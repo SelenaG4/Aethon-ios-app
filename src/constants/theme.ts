@@ -36,8 +36,13 @@ export const GRADIENT = {
   statPurple: ['#6366f1', '#a855f7'],
 }
 
+// caption was 13 until 11.2's accessibility pass found it violated the
+// guide's "no carer/family/management text below 15pt" floor at every one
+// of its usage sites (including the medication reference footnote, one of
+// 11.2's required sentences) — bumped to the floor rather than removed, in
+// case a genuinely decorative use ever needs it below `small` again.
 export const TYPE = {
-  h1: 28, h2: 22, h3: 18, body: 17, small: 15, caption: 13,
+  h1: 28, h2: 22, h3: 18, body: 17, small: 15, caption: 15,
   residentH1: 36, residentH2: 26, residentBody: 22, residentMin: 22,
 }
 

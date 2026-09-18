@@ -21,15 +21,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     reactNativeDelegate = delegate
     reactNativeFactory = factory
 
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    factory.startReactNative(
-      withModuleName: "Aethon",
-      in: window,
-      launchOptions: launchOptions
-    )
-
     return true
+  }
+
+  // Window creation and startReactNative now happen in SceneDelegate, which
+  // owns the UIWindow for its UIWindowScene. This method is what tells UIKit
+  // which scene delegate class to use, per the "Default Configuration" in
+  // Info.plist's UIApplicationSceneManifest.
+  func application(
+    _ application: UIApplication,
+    configurationForConnecting connectingSceneSession: UISceneSession,
+    options: UIScene.ConnectionOptions
+  ) -> UISceneConfiguration {
+    UISceneConfiguration(
+      name: "Default Configuration",
+      sessionRole: connectingSceneSession.role
+    )
   }
 }
 

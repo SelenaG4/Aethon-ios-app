@@ -18,6 +18,7 @@
 		AD1FA9FD8406467DA4C1B74A /* Geist-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A5DAB18AA4B24B438A07728F /* Geist-Regular.ttf */; };
 		BD21105FA3344A30A993ACF3 /* Geist-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0BB9B6E9E24B495BBC02DAAC /* Geist-SemiBold.ttf */; };
 		C3976929E45643B08D3DA501 /* Geist-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 33C20D7F8A1B47A28E082D74 /* Geist-Black.ttf */; };
+		EA1723FD28BC4B74963D6D26 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21F2DC51DA4FA58746BDC78 /* SceneDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Aethon/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Aethon/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A5DAB18AA4B24B438A07728F /* Geist-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geist-Regular.ttf"; path = "../assets/fonts/Geist-Regular.ttf"; sourceTree = "<group>"; };
+		C21F2DC51DA4FA58746BDC78 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = Aethon/SceneDelegate.swift; sourceTree = "<group>"; };
 		C61B2F3194BE4FAA9C384462 /* Geist-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Geist-Medium.ttf"; path = "../assets/fonts/Geist-Medium.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -56,6 +58,7 @@
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				C21F2DC51DA4FA58746BDC78 /* SceneDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -281,6 +284,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				EA1723FD28BC4B74963D6D26 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
